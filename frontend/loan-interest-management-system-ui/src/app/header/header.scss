@@ -1,0 +1,151 @@
+:host {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background: #f5f9ff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #1b2a41;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+button {
+  border: none;
+  cursor: pointer;
+}
+
+.topbar {
+  position: relative;
+  z-index: 20;
+  min-height: 72px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(117, 138, 182, 0.12);
+
+  .nav-shell {
+    width: 100%;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    box-sizing: border-box;
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #16325d;
+      text-decoration: none;
+
+      .brand-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #dfeaff, #edf0ff);
+        color: #3953d8;
+        font-size: 0.82rem;
+        box-shadow: 0 8px 18px rgba(86, 109, 214, 0.14);
+      }
+    }
+
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 26px;
+
+      a {
+        text-decoration: none;
+        color: #4a5d7d;
+        font-weight: 600;
+        transition: color 0.2s ease;
+
+        &:hover {
+          color: #2a56d7;
+        }
+      }
+    }
+
+    .signup-btn {
+      background: linear-gradient(135deg, #4b6ef5, #6d72ff);
+      color: #fff;
+      font-weight: 700;
+      padding: 0.9rem 1.45rem;
+      border-radius: 999px;
+      box-shadow: 0 12px 24px rgba(97, 111, 216, 0.22);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 28px rgba(91, 97, 209, 0.25);
+      }
+    }
+  }
+}
+
+@media (max-width: 820px) {
+  .topbar {
+    .nav-shell {
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 14px 18px;
+
+      .main-nav {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px 18px;
+      }
+    }
+  }
+}
+
+@media (max-width: 560px) {
+  .topbar {
+    .nav-shell {
+      padding: 12px 16px;
+      gap: 12px;
+
+      .brand {
+        font-size: 1rem;
+
+        .brand-mark {
+          width: 36px;
+          height: 36px;
+          font-size: 0.72rem;
+        }
+      }
+
+      .main-nav {
+        gap: 8px 14px;
+
+        a {
+          font-size: 0.8rem;
+        }
+      }
+
+      .signup-btn {
+        padding: 0.7rem 1rem;
+        font-size: 0.82rem;
+      }
+    }
+  }
+}

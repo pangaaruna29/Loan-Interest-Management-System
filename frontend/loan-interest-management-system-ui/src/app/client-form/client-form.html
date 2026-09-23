@@ -1,0 +1,121 @@
+<div class="form-page">
+  <mat-card class="form-card">
+    <div class="form-header">
+      <div>
+        <h2>Loan Registration</h2>
+      </div>
+      <button mat-stroked-button type="button">Back</button>
+    </div>
+
+    <form class="client-form" [formGroup]="clientForm">
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Client Name</mat-label>
+          <input matInput placeholder="Enter client name" formControlName="clientName" />
+          <mat-error *ngIf="clientForm.get('clientName')?.hasError('required')">
+            {{ getErrorMessage('clientName') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Phone Number</mat-label>
+          <input matInput placeholder="Enter contact number" formControlName="phoneNumber" />
+          <mat-error *ngIf="clientForm.get('phoneNumber')?.hasError('required') || clientForm.get('phoneNumber')?.hasError('pattern')">
+            {{ getErrorMessage('phoneNumber') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Principal Amount</mat-label>
+          <input matInput type="text" inputmode="decimal" pattern="^[0-9]+(\\.[0-9]+)?$" min="0" placeholder="Enter amount" formControlName="principalAmount" />
+          <mat-error *ngIf="clientForm.get('principalAmount')?.hasError('required') || clientForm.get('principalAmount')?.hasError('min') || clientForm.get('principalAmount')?.hasError('pattern')">
+            {{ getErrorMessage('principalAmount') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Interest Rate</mat-label>
+          <input matInput type="text" inputmode="decimal" pattern="^[0-9]+(\\.[0-9]+)?$" min="0" placeholder="Enter rate" formControlName="interestRate" />
+          <mat-error *ngIf="clientForm.get('interestRate')?.hasError('required') || clientForm.get('interestRate')?.hasError('min') || clientForm.get('interestRate')?.hasError('pattern')">
+            {{ getErrorMessage('interestRate') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Interest Frequency</mat-label>
+          <mat-select formControlName="interestFrequency">
+            <mat-option value="Daily">Daily</mat-option>
+            <mat-option value="Weekly">Weekly</mat-option>
+            <mat-option value="Monthly">Monthly</mat-option>
+            <mat-option value="Yearly">Yearly</mat-option>
+          </mat-select>
+          <mat-error *ngIf="clientForm.get('interestFrequency')?.hasError('required')">
+            {{ getErrorMessage('interestFrequency') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="Pending">Pending</mat-option>
+            <mat-option value="Partial">Partial</mat-option>
+            <mat-option value="Paid">Paid</mat-option>
+            <mat-option value="Overdue">Overdue</mat-option>
+          </mat-select>
+          <mat-error *ngIf="clientForm.get('status')?.hasError('required')">
+            {{ getErrorMessage('status') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Start Date</mat-label>
+          <input matInput [matDatepicker]="startDatePicker" formControlName="startDate" />
+          <mat-datepicker-toggle matSuffix [for]="startDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #startDatePicker></mat-datepicker>
+          <mat-error *ngIf="clientForm.get('startDate')?.hasError('required') || clientForm.get('startDate')?.hasError('pastDate')">
+            {{ getErrorMessage('startDate') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Return Date</mat-label>
+          <input matInput [matDatepicker]="returnDatePicker" formControlName="returnDate" />
+          <mat-datepicker-toggle matSuffix [for]="returnDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #returnDatePicker></mat-datepicker>
+          <mat-error *ngIf="clientForm.get('returnDate')?.hasError('required') || clientForm.get('returnDate')?.hasError('futureDate') || clientForm.get('returnDate')?.hasError('mustBeAfterStartDate')">
+            {{ getErrorMessage('returnDate') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Total Amount</mat-label>
+          <input matInput type="text" inputmode="decimal" pattern="^[0-9]+(\\.[0-9]+)?$" min="0" placeholder="Enter total amount" formControlName="totalAmount" />
+          <mat-error *ngIf="clientForm.get('totalAmount')?.hasError('required') || clientForm.get('totalAmount')?.hasError('min') || clientForm.get('totalAmount')?.hasError('pattern')">
+            {{ getErrorMessage('totalAmount') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Amount Paid</mat-label>
+          <input matInput type="text" inputmode="decimal" pattern="^[0-9]+(\\.[0-9]+)?$" min="0" placeholder="Enter paid amount" formControlName="amountPaid" />
+          <mat-error *ngIf="clientForm.get('amountPaid')?.hasError('required') || clientForm.get('amountPaid')?.hasError('min') || clientForm.get('amountPaid')?.hasError('pattern')">
+            {{ getErrorMessage('amountPaid') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Balance Amount</mat-label>
+          <input matInput type="text" inputmode="decimal" pattern="^[0-9]+(\\.[0-9]+)?$" min="0" placeholder="Enter balance" formControlName="balanceAmount" />
+          <mat-error *ngIf="clientForm.get('balanceAmount')?.hasError('required') || clientForm.get('balanceAmount')?.hasError('min') || clientForm.get('balanceAmount')?.hasError('pattern')">
+            {{ getErrorMessage('balanceAmount') }}
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-actions">
+        <button mat-stroked-button type="button" (click)="cancelClient()">Cancel</button>
+        <button mat-raised-button color="primary" type="submit" (click)="saveClient()">Save Client</button>
+      </div>
+    </form>
+  </mat-card>
+</div>

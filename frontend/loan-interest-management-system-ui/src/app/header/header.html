@@ -1,0 +1,14 @@
+<mat-toolbar class="topbar" color="transparent">
+  <div class="nav-shell">
+    <a class="brand" href="#" aria-label="Loan Manager home">
+      <span class="brand-mark">LM</span>
+      <span>Loan Manager</span>
+    </a>
+
+    <nav class="main-nav" aria-label="Main navigation">
+      <a *ngFor="let item of navItems" href="#">{{ item }}</a>
+    </nav>
+
+    <button mat-flat-button class="signup-btn" type="button">Sign Up</button>
+  </div>
+</mat-toolbar>
