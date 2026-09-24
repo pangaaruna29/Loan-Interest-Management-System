@@ -1,0 +1,202 @@
+<div class="clients-page">
+  <div class="page-header">
+    <div class="heading-block">
+      <span class="kicker">Client Management</span>
+      <h1>Client Details</h1>
+      <p>Manage clients, track interest, payments, and upcoming dues.</p>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div *ngFor="let card of summaryCards" class="summary-card" [ngClass]="card.accent">
+      <div class="summary-icon">
+        <mat-icon>{{ card.icon }}</mat-icon>
+      </div>
+      <div class="summary-body">
+        <span>{{ card.label }}</span>
+        <strong>{{ card.value }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-toolbar">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search</mat-label>
+      <input matInput [(ngModel)]="searchText" placeholder="Client name" />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Status</mat-label>
+      <mat-select [(ngModel)]="statusFilter">
+        <mat-option value="All">All</mat-option>
+        <mat-option value="Paid">Paid</mat-option>
+        <mat-option value="Upcoming">Upcoming</mat-option>
+        <mat-option value="Overdue">Overdue</mat-option>
+        <mat-option value="Partially Paid">Partially Paid</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Frequency</mat-label>
+      <mat-select [(ngModel)]="frequencyFilter">
+        <mat-option value="All">All</mat-option>
+        <mat-option value="Daily">Daily</mat-option>
+        <mat-option value="Weekly">Weekly</mat-option>
+        <mat-option value="Monthly">Monthly</mat-option>
+        <mat-option value="Yearly">Yearly</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-field sort-field">
+      <mat-label>Sort</mat-label>
+      <mat-select [(ngModel)]="sortBy">
+        <mat-option value="dueDate">Due Date</mat-option>
+        <mat-option value="principalAmount">Principal Amount</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="table-card">
+    <table mat-table [dataSource]="filteredClients" class="client-table">
+      <ng-container *ngFor="let column of columnDefs" [matColumnDef]="column.key">
+        <ng-container *ngIf="column.key !== 'actions'; else actionTemplate">
+          <th mat-header-cell *matHeaderCellDef>{{ column.label }}</th>
+          <td mat-cell *matCellDef="let client">
+            <span *ngIf="column.key === 'paymentStatus'" class="status-badge" [ngClass]="getStatusClass(client[column.key])">
+              {{ client[column.key] }}
+            </span>
+
+            <span *ngIf="column.key === 'principalAmount'">
+              {{ formatCurrency(client[column.key]) }}
+            </span>
+
+            <span *ngIf="column.key === 'interestRate'">
+              {{ formatRate(client[column.key]) }}
+            </span>
+
+            <span *ngIf="column.key === 'startDate' || column.key === 'dueDate'">
+              {{ formatDate(client[column.key]) }}
+            </span>
+
+            <span *ngIf="column.key !== 'paymentStatus' && column.key !== 'principalAmount' && column.key !== 'interestRate' && column.key !== 'startDate' && column.key !== 'dueDate'">
+              {{ client[column.key] }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-template #actionTemplate>
+          <th mat-header-cell *matHeaderCellDef>{{ column.label }}</th>
+          <td mat-cell *matCellDef="let client" class="action-column">
+            <button mat-icon-button color="primary" matTooltip="View Client" (click)="viewClient(client)">
+              <mat-icon>visibility</mat-icon>
+            </button>
+            <button mat-icon-button color="accent" matTooltip="Edit Client" (click)="editClient(client)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button matTooltip="View Payment / Interest Details" (click)="viewClient(client)">
+              <mat-icon>receipt</mat-icon>
+            </button>
+          </td>
+        </ng-template>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    <div *ngIf="filteredClients.length === 0" class="empty-state">
+      <mat-icon>search_off</mat-icon>
+      <p>No clients match your current filters.</p>
+    </div>
+  </div>
+</div>
+
+<div class="details-backdrop" *ngIf="isDetailsOpen" (click)="closeDetails()">
+  <div class="details-panel" *ngIf="selectedClient" (click)="$event.stopPropagation()">
+    <div class="panel-header">
+      <div>
+        <span class="panel-kicker">Interest Details</span>
+        <h2>{{ selectedClient.clientName }}</h2>
+      </div>
+      <button mat-icon-button (click)="closeDetails()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="panel-grid">
+      <div class="detail-box">
+        <span>Principal Amount</span>
+        <strong>{{ formatCurrency(selectedClient.principalAmount) }}</strong>
+      </div>
+      <div class="detail-box">
+        <span>Interest Rate</span>
+        <strong>{{ formatRate(selectedClient.interestRate) }}</strong>
+      </div>
+      <div class="detail-box">
+        <span>Interest Frequency</span>
+        <strong>{{ selectedClient.interestFrequency }}</strong>
+      </div>
+      <div class="detail-box">
+        <span>Payment Status</span>
+        <strong>{{ selectedClient.paymentStatus }}</strong>
+      </div>
+      <div class="detail-box">
+        <span>Start Date</span>
+        <strong>{{ formatDate(selectedClient.startDate) }}</strong>
+      </div>
+      <div class="detail-box">
+        <span>Due Date</span>
+        <strong>{{ formatDate(selectedClient.dueDate) }}</strong>
+      </div>
+    </div>
+
+    <div class="calc-box">
+      <h3>Interest Calculation</h3>
+      <div class="calc-row">
+        <span>Principal Amount</span>
+        <strong>{{ formatCurrency(selectedClient.principalAmount) }}</strong>
+      </div>
+      <div class="calc-row">
+        <span>Interest Rate</span>
+        <strong>{{ formatRate(selectedClient.interestRate) }}</strong>
+      </div>
+      <div class="calc-row">
+        <span>Frequency</span>
+        <strong>{{ selectedClient.interestFrequency }}</strong>
+      </div>
+      <div class="calc-row">
+        <span>Interest Periods</span>
+        <strong>{{ getClientCalculation(selectedClient).periods }}</strong>
+      </div>
+      <div class="calc-row">
+        <span>Interest / Period</span>
+        <strong>{{ formatCurrency(getClientCalculation(selectedClient).interestPerPeriod) }}</strong>
+      </div>
+      <div class="calc-row total-row">
+        <span>Total Interest</span>
+        <strong>{{ formatCurrency(getClientCalculation(selectedClient).totalInterest) }}</strong>
+      </div>
+      <div class="calc-row total-row">
+        <span>Principal + Interest</span>
+        <strong>{{ formatCurrency(getClientCalculation(selectedClient).totalDue) }}</strong>
+      </div>
+    </div>
+
+    <div class="calc-breakdown">
+      <h3>Due Status</h3>
+      <div class="calc-row">
+        <span>Amount Already Paid</span>
+        <strong>{{ formatCurrency(getClientCalculation(selectedClient).amountPaid) }}</strong>
+      </div>
+      <div class="calc-row">
+        <span>Remaining Amount</span>
+        <strong>{{ formatCurrency(getClientCalculation(selectedClient).remaining) }}</strong>
+      </div>
+      <div class="calc-row">
+        <span>Due Summary</span>
+        <strong>{{ getDueSummary(selectedClient) }}</strong>
+      </div>
+    </div>
+  </div>
+</div>

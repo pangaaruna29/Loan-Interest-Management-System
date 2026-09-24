@@ -1,0 +1,27 @@
+<mat-toolbar class="topbar" color="transparent">
+  <div class="nav-shell">
+    <a class="brand" href="#" aria-label="Loan Manager home">
+      <span class="brand-mark">LM</span>
+      <span>Loan Manager</span>
+    </a>
+
+    <nav class="main-nav" aria-label="Main navigation">
+      <a *ngFor="let item of navItems" [routerLink]="[`/${item.key}`]">{{ item.label }}</a>
+    </nav>
+
+    <button
+      *ngIf="!isLoggedIn"
+      mat-flat-button
+      class="signup-btn"
+      type="button"
+      (click)="navigateToLogin()"
+    >
+      Login
+    </button>
+
+    <div *ngIf="isLoggedIn" class="user-avatar" [attr.title]="userName" aria-label="Logged in user">
+      {{ userInitial }}
+    </div>
+  </div>
+</mat-toolbar>
+

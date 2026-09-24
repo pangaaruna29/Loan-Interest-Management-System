@@ -1,0 +1,43 @@
+<div class="login-shell">
+  <mat-card class="login-card">
+    <div class="login-header">
+      <div class="brand-mark">LM</div>
+      <h1>Welcome back</h1>
+      <p>Sign in to continue managing your loans and client records</p>
+    </div>
+
+    <form [formGroup]="loginForm"  class="login-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Email</mat-label>
+        <input matInput type="email" formControlName="email" placeholder="name@example.com" />
+        <mat-icon matSuffix>email</mat-icon>
+        <mat-error *ngIf="emailControl?.invalid && emailControl?.touched">
+          {{ getEmailErrorMessage() }}
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Password</mat-label>
+        <input matInput type="password" formControlName="password" placeholder="Enter your password" />
+        <mat-icon matSuffix>lock</mat-icon>
+        <mat-error *ngIf="passwordControl?.invalid && passwordControl?.touched">
+          {{ getPasswordErrorMessage() }}
+        </mat-error>
+      </mat-form-field>
+
+      <div class="form-extra">
+        <mat-checkbox color="primary">Remember me</mat-checkbox>
+        <a href="#" class="forgot-password">Forgot password?</a>
+      </div>
+
+      <button mat-flat-button color="primary" class="login-button" type="submit" (click)="saveClient()" [disabled]="loginForm.invalid">
+        Sign In
+      </button>
+
+      <div class="signup-row">
+        <span>New here?</span>
+        <a [routerLink]="['/signup']">Create account</a>
+      </div>
+    </form>
+  </mat-card>
+</div>

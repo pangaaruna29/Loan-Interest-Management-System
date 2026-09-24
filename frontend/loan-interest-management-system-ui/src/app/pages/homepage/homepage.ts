@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { MaterialModule } from '../material/material-module';
+import { MaterialModule } from '../../material/material-module';
 
 interface StatCard {
   title: string;
