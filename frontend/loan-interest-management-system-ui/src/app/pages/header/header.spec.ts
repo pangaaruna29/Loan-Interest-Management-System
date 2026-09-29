@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Header } from './header';
+import { AuthService } from '../../services/auth.service';
 
 describe('Header', () => {
   let component: Header;
@@ -17,5 +18,12 @@ describe('Header', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should show the username as soon as the current user changes', () => {
+    TestBed.inject(AuthService).setCurrentUser({ username: 'Taylor' });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Taylor');
   });
 });

@@ -22,7 +22,7 @@ interface ClientColumn {
   templateUrl: './client-details.html',
 })
 export class ClientDetails implements OnInit, AfterViewInit {
-  readonly columnDefs: ClientColumn[] = [
+   columnDefs: ClientColumn[] = [
     { key: 'clientName', label: 'Client Name' },
     { key: 'phoneNumber', label: 'Phone Number' },
     { key: 'principalAmount', label: 'Principal Amount' },
@@ -33,12 +33,12 @@ export class ClientDetails implements OnInit, AfterViewInit {
     { key: 'paymentStatus', label: 'Status' },
     { key: 'actions', label: 'Actions' },
   ];
-  readonly displayedColumns = this.columnDefs.map((column) => column.key);
-  readonly dataSource = new MatTableDataSource<ViewClientData>([]);
-  readonly storageKey = 'loanManagerClientDetails';
-  readonly statusOptions = ['All', 'Pending', 'Partially Paid', 'Paid', 'Overdue'];
-  readonly interestTypeOptions = ['All', 'Simple Interest', 'Compound Interest'];
-  readonly frequencyOptions = ['All', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
+   displayedColumns = this.columnDefs.map((column) => column.key);
+   dataSource = new MatTableDataSource<ViewClientData>([]);
+   storageKey = 'loanManagerClientDetails';
+   statusOptions = ['All', 'Pending', 'Partially Paid', 'Paid', 'Overdue'];
+   interestTypeOptions = ['All', 'Simple Interest', 'Compound Interest'];
+   frequencyOptions = ['All', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
 
   clients: ViewClientData[] = [];
   selectedClient: ViewClientData | null = null;
@@ -48,14 +48,14 @@ export class ClientDetails implements OnInit, AfterViewInit {
   selectedStatus = 'All';
   selectedInterestType = 'All';
   selectedFrequency = 'All';
-  private readonly today = new Date();
+  private  today = new Date();
 
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
-    private readonly router: Router,
-    private readonly loanInterest: LoanInterestService,
+    private  router: Router,
+    private  loanInterest: LoanInterestService,
   ) {
     this.dataSource.filterPredicate = (client, filter) => this.matchesFilters(client, JSON.parse(filter));
     this.dataSource.sortingDataAccessor = (client, property) => {

@@ -18,13 +18,13 @@ export class PaymentOption {
   @Output() closePopup = new EventEmitter<void>();
   @Output() paymentSaved = new EventEmitter<ViewClientData>();
 
-  readonly today = this.toDateInputValue(new Date());
-  readonly paymentForm;
-  private readonly storageKey = 'loanManagerClientDetails';
+   today = this.toDateInputValue(new Date());
+   paymentForm;
+  private  storageKey = 'loanManagerClientDetails';
 
   constructor(
-    private readonly formBuilder: FormBuilder,
-    private readonly loanInterest: LoanInterestService,
+    private  formBuilder: FormBuilder,
+    private  loanInterest: LoanInterestService,
   ) {
     this.paymentForm = this.formBuilder.group({
       paymentAmount: [null as number | null, [Validators.required, Validators.min(0.01), (control) => this.amountLimitValidator(control.value)]],

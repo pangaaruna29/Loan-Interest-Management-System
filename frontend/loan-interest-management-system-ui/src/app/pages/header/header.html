@@ -10,7 +10,7 @@
     </nav>
 
     <button
-      *ngIf="!isLoggedIn"
+      *ngIf="!isLoggedIn()"
       mat-flat-button
       class="signup-btn"
       type="button"
@@ -19,8 +19,8 @@
       Login
     </button>
 
-    <div *ngIf="isLoggedIn" class="user-avatar" [attr.title]="userName" aria-label="Logged in user">
-      {{ userInitial }}
+    <div *ngIf="isLoggedIn()" class="user-account" [attr.title]="userName()" aria-label="Logged in user">
+      <div class="user-avatar">{{ userInitial() }}</div>
     </div>
   </div>
 </mat-toolbar>

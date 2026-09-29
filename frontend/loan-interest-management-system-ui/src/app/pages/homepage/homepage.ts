@@ -33,9 +33,9 @@ interface QuickAction {
   templateUrl: './homepage.html',
 })
 export class Homepage {
-  readonly navItems = ['Home', 'Client Details', 'New Client', 'Login'];
+   navItems = ['Home', 'Client Details', 'New Client', 'Login'];
 
-  readonly stats: StatCard[] = [
+   stats: StatCard[] = [
     { title: 'Total Clients', value: '128', detail: '+12 this month', icon: 'groups', tone: 'blue' },
     { title: 'Active Loans', value: '86', detail: '24 due soon', icon: 'receipt_long', tone: 'purple' },
     { title: 'Total Amount Given', value: '₹12,50,000', detail: 'Across all loans', icon: 'payments', tone: 'green' },
@@ -43,21 +43,21 @@ export class Homepage {
     { title: 'Outstanding Balance', value: '₹3,75,000', detail: 'Current receivables', icon: 'account_balance_wallet', tone: 'mint' },
   ];
 
-  readonly clients: ClientRecord[] = [
+   clients: ClientRecord[] = [
     { name: 'Aarav Sharma', phone: '+91 98765 43210', amount: '₹2,50,000', rate: '12%', balance: '₹1,75,000', status: 'Partially Paid', statusClass: 'status-partial' },
     { name: 'Meera Nair', phone: '+91 91234 56789', amount: '₹1,80,000', rate: '10%', balance: '₹0', status: 'Paid', statusClass: 'status-paid' },
     { name: 'Rohan Verma', phone: '+91 99876 54321', amount: '₹3,20,000', rate: '14%', balance: '₹2,40,000', status: 'Pending', statusClass: 'status-pending' },
     { name: 'Sana Khan', phone: '+91 93456 78901', amount: '₹2,10,000', rate: '13%', balance: '₹1,35,000', status: 'Overdue', statusClass: 'status-overdue' },
   ];
 
-  readonly actions: QuickAction[] = [
+   actions: QuickAction[] = [
     { label: 'Add New Client', icon: 'person_add', tone: 'blue' },
     { label: 'View Client Details', icon: 'visibility', tone: 'purple' },
     { label: 'Record Payment', icon: 'payments', tone: 'green' },
     { label: 'Payment History', icon: 'history', tone: 'amber' },
   ];
 
-  readonly chartValues = [55, 68, 62, 83, 76, 96, 88, 72];
-  readonly chartLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+   chartValues = [55, 68, 62, 83, 76, 96, 88, 72];
+   chartLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
 }
 

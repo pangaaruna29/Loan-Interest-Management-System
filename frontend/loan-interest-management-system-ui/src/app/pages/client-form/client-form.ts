@@ -14,7 +14,7 @@ import { ViewClientData } from '../view-client/view-client';
 })
 export class ClientForm implements OnInit {
   clientForm: FormGroup;
-  private readonly storageKey = 'loanManagerClientDetails';
+  private  storageKey = 'loanManagerClientDetails';
   isEditMode = false;
   selectedClient: ViewClientData | null = null;
 

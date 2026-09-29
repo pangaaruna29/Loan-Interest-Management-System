@@ -38,9 +38,9 @@ export class ViewClient {
   @Input() client: ViewClientData | null = null;
   @Output() close = new EventEmitter<void>();
 
-  private readonly calculationDate = new Date();
+  private  calculationDate = new Date();
 
-  constructor(private readonly loanInterest: LoanInterestService) {}
+  constructor(private  loanInterest: LoanInterestService) {}
 
   get payments(): ClientPayment[] {
     return this.client?.payments ?? [];
