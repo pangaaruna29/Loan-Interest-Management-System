@@ -1,19 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MaterialModule } from '../../material/material-module';
-
-export interface ClientRecord {
-  clientName: string;
-  phoneNumber: string;
-  principalAmount: number;
-  interestRate: number;
-  interestFrequency: string;
-  startDate: string;
-  dueDate: string;
-  paymentStatus: string;
-}
+import { LoanInterestService, PaymentHistoryEntry } from '../../services/loan-interest.service';
+import { ViewClientData } from '../view-client/view-client';
 
 @Component({
   imports: [MaterialModule, CommonModule, ReactiveFormsModule],
@@ -21,20 +12,51 @@ export interface ClientRecord {
   styleUrl: './client-form.scss',
   templateUrl: './client-form.html',
 })
-export class ClientForm {
+export class ClientForm implements OnInit {
   clientForm: FormGroup;
   private readonly storageKey = 'loanManagerClientDetails';
+  isEditMode = false;
+  selectedClient: ViewClientData | null = null;
 
-  constructor(private fb: FormBuilder, private router: Router) {
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute,
+    private loanInterest: LoanInterestService,
+  ) {
     this.clientForm = this.fb.group({
       clientName: ['', Validators.required],
       phoneNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
       principalAmount: [null, [Validators.required, Validators.min(1)]],
       interestRate: [null, [Validators.required, Validators.min(0.01)]],
+      interestType: ['', Validators.required],
       interestFrequency: ['', Validators.required],
       startDate: ['', Validators.required],
       dueDate: ['', [Validators.required, this.dueDateAfterStartValidator()]],
-      status: ['', Validators.required],
+    });
+
+  }
+
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id) return;
+
+    this.isEditMode = true;
+    this.selectedClient = this.getSavedClients().find((client) => client.id === id) ?? null;
+    if (!this.selectedClient) {
+      this.router.navigate(['/clientDetails']);
+      return;
+    }
+
+    this.clientForm.patchValue({
+      clientName: this.selectedClient.clientName,
+      phoneNumber: this.selectedClient.phoneNumber,
+      principalAmount: this.selectedClient.principalAmount,
+      interestRate: this.selectedClient.interestRate,
+      interestType: this.selectedClient.interestType ?? 'Simple Interest',
+      interestFrequency: this.selectedClient.interestFrequency,
+      startDate: this.parseDateValue(this.selectedClient.startDate),
+      dueDate: this.parseDateValue(this.selectedClient.dueDate),
     });
   }
 
@@ -83,19 +105,17 @@ export class ClientForm {
       phoneNumber: 'Phone Number',
       principalAmount: 'Principal Amount',
       interestRate: 'Interest Rate',
+      interestType: 'Interest Type',
       interestFrequency: 'Interest Frequency',
       startDate: 'Start Date',
       dueDate: 'Due Date',
-      status: 'Status',
     };
 
     return labels[fieldName] || fieldName;
   }
 
   cancelClient(): void {
-    this.clientForm.reset();
-    this.clientForm.markAsPristine();
-    this.clientForm.markAsUntouched();
+    this.router.navigate(['/clientDetails']);
   }
 
   saveClient(): void {
@@ -105,37 +125,74 @@ export class ClientForm {
     }
 
     const formValue = this.clientForm.value;
-    const newClient: ClientRecord = {
+    const updatedFields = {
       clientName: formValue.clientName.trim(),
       phoneNumber: formValue.phoneNumber.trim(),
       principalAmount: Number(formValue.principalAmount),
       interestRate: Number(formValue.interestRate),
+      interestType: formValue.interestType,
       interestFrequency: formValue.interestFrequency,
       startDate: this.formatDateValue(formValue.startDate),
       dueDate: this.formatDateValue(formValue.dueDate),
-      paymentStatus: this.mapStatus(formValue.status),
     };
 
     const savedClients = this.getSavedClients();
-    savedClients.push(newClient);
+    if (this.isEditMode) {
+      const index = savedClients.findIndex((client) => client.id === this.selectedClient?.id);
+      if (index < 0) {
+        this.router.navigate(['/clientDetails']);
+        return;
+      }
+
+      const existingClient = savedClients[index];
+      const payments = existingClient.payments ?? [];
+      const recordedPayments = payments.reduce((total, payment) => total + this.toNumber(payment.paymentAmount), 0);
+      const legacyAmountPaid = Math.max(0, this.toNumber(existingClient.amountPaid) - recordedPayments);
+      const interest = this.loanInterest.calculateInterest({
+        principal: updatedFields.principalAmount,
+        rate: updatedFields.interestRate,
+        type: updatedFields.interestType,
+        frequency: updatedFields.interestFrequency,
+        startDate: updatedFields.startDate,
+      }, new Date());
+      const allocation = this.loanInterest.calculatePaymentAllocation(
+        0,
+        updatedFields.principalAmount,
+        interest,
+        payments.map((payment) => ({
+          paymentAmount: this.toNumber(payment.paymentAmount),
+          principalPaid: payment.principalPaid,
+          interestPaid: payment.interestPaid,
+        })),
+        legacyAmountPaid,
+      );
+
+      savedClients[index] = {
+        ...existingClient,
+        ...updatedFields,
+        paymentStatus: this.loanInterest.calculatePaymentStatus(
+          allocation.outstanding,
+          updatedFields.dueDate,
+          new Date(),
+          allocation.totalPaid,
+        ),
+      };
+    } else {
+      savedClients.push({
+        id: this.createClientId(),
+        ...updatedFields,
+        payments: [],
+        amountPaid: 0,
+        paymentStatus: 'Pending',
+      });
+    }
     window.localStorage.setItem(this.storageKey, JSON.stringify(savedClients));
 
     this.router.navigate(['/clientDetails']);
   }
 
-  private mapStatus(status: string): string {
-    const statusMap: Record<string, string> = {
-      Upcoming: 'Upcoming',
-      Active: 'Upcoming',
-      Paid: 'Paid',
-      'Partially Paid': 'Partially Paid',
-      Overdue: 'Overdue',
-    };
 
-    return statusMap[status] || 'Upcoming';
-  }
-
-  private getSavedClients(): ClientRecord[] {
+  private getSavedClients(): ViewClientData[] {
     if (typeof window === 'undefined') {
       return [];
     }
@@ -148,7 +205,7 @@ export class ClientForm {
 
     try {
       const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? parsed as ViewClientData[] : [];
     } catch {
       return [];
     }
@@ -157,5 +214,21 @@ export class ClientForm {
   private formatDateValue(value: Date | string): string {
     const date = new Date(value);
     return date.toISOString().split('T')[0];
+  }
+
+  private parseDateValue(value: string): Date | null {
+    const date = new Date(`${value}T00:00:00`);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  private createClientId(): string {
+    return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+
+  private toNumber(value: unknown): number {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : 0;
   }
 }

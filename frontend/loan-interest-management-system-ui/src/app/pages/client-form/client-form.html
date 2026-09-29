@@ -24,8 +24,8 @@
       <div class="form-header">
         <div class="form-title-wrap">
           <span class="page-tag">Client Management</span>
-          <h2>Add New Client</h2>
-          <p>Enter the client details below to create a new client record.</p>
+          <h2>{{ isEditMode ? 'Edit Client' : 'Add New Client' }}</h2>
+          <p>{{ isEditMode ? 'Update the client and loan details below.' : 'Enter the client details below to create a new client record.' }}</p>
         </div>
       </div>
 
@@ -64,6 +64,17 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline">
+            <mat-label>Interest Type</mat-label>
+            <mat-select formControlName="interestType">
+              <mat-option value="Simple Interest">Simple Interest</mat-option>
+              <mat-option value="Compound Interest">Compound Interest</mat-option>
+            </mat-select>
+            <mat-error *ngIf="clientForm.get('interestType')?.touched && clientForm.get('interestType')?.hasError('required')">
+              {{ getErrorMessage('interestType') }}
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
             <mat-label>Interest Frequency</mat-label>
             <mat-select formControlName="interestFrequency">
               <mat-option value="Daily">Daily</mat-option>
@@ -75,21 +86,7 @@
               {{ getErrorMessage('interestFrequency') }}
             </mat-error>
           </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Status</mat-label>
-            <mat-select formControlName="status">
-              <mat-option value="Upcoming">Upcoming</mat-option>
-              <mat-option value="Active">Active</mat-option>
-              <mat-option value="Paid">Paid</mat-option>
-              <mat-option value="Partially Paid">Partially Paid</mat-option>
-              <mat-option value="Overdue">Overdue</mat-option>
-            </mat-select>
-            <mat-error *ngIf="clientForm.get('status')?.touched && clientForm.get('status')?.hasError('required')">
-              {{ getErrorMessage('status') }}
-            </mat-error>
-          </mat-form-field>
-
+          
           <mat-form-field appearance="outline">
             <mat-label>Start Date</mat-label>
             <input matInput [matDatepicker]="startDatePicker" formControlName="startDate" />
@@ -113,7 +110,7 @@
 
         <div class="form-actions">
           <button mat-stroked-button type="button" (click)="cancelClient()">Cancel</button>
-          <button mat-flat-button color="primary" type="submit" [disabled]="clientForm.invalid">Save Client</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="clientForm.invalid">{{ isEditMode ? 'Update Client' : 'Save Client' }}</button>
         </div>
       </form>
     </div>

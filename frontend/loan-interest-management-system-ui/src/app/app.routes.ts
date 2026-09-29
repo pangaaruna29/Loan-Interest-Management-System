@@ -5,6 +5,8 @@ import { Homepage } from './pages/homepage/homepage';
 import { Header } from './pages/header/header';
 import { Loginpage } from './pages/loginpage/loginpage';
 import { Signuppage } from './pages/signuppage/signuppage';
+import { ViewClient } from './pages/view-client/view-client';
+import { PaymentOption } from './payment-option/payment-option';
 
 export const routes: Routes = [
     {path:'header',component:Header},
@@ -12,5 +14,8 @@ export const routes: Routes = [
     {path:'login',component:Loginpage},
     {path:'signup',component:Signuppage},
     {path:'clientDetails',component:ClientDetails},
-    {path:'newClient',component:ClientForm}
+    {path:'newClient',component:ClientForm},
+    {path:'clients/edit/:id',component:ClientForm},
+    {path:'viewClient',component:ViewClient},
+    {path:'payment',component:PaymentOption}
 ];

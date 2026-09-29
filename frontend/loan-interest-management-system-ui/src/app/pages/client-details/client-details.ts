@@ -1,36 +1,28 @@
-import { Component } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { MaterialModule } from '../../material/material-module';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
+import { MatTableDataSource } from '@angular/material/table';
+import { Router, RouterModule } from '@angular/router';
+import { LoanInterestService } from '../../services/loan-interest.service';
+import { ViewClient, ViewClientData } from '../view-client/view-client';
+import { PaymentOption } from '../../payment-option/payment-option';
 
-interface ClientData {
-  clientName: string;
-  phoneNumber: string;
-  principalAmount: number;
-  interestRate: number;
-  interestFrequency: 'Daily' | 'Weekly' | 'Monthly' | 'Yearly';
-  startDate: string;
-  dueDate: string;
-  paymentStatus: 'Paid' | 'Upcoming' | 'Overdue' | 'Partially Paid';
-  amountPaid?: number;
+interface ClientColumn {
+  key: string;
+  label: string;
 }
 
 @Component({
-  imports: [MaterialModule, CommonModule, FormsModule],
+  imports: [MaterialModule, CommonModule, FormsModule, RouterModule, ViewClient, PaymentOption],
   selector: 'app-client-details',
   styleUrl: './client-details.scss',
   templateUrl: './client-details.html',
 })
-export class ClientDetails {
-  readonly storageKey = 'loanManagerClientDetails';
-  searchText = '';
-  statusFilter = 'All';
-  frequencyFilter = 'All';
-  sortBy = 'dueDate';
-  selectedClient: ClientData | null = null;
-  isDetailsOpen = false;
-
-  columnDefs = [
+export class ClientDetails implements OnInit, AfterViewInit {
+  readonly columnDefs: ClientColumn[] = [
     { key: 'clientName', label: 'Client Name' },
     { key: 'phoneNumber', label: 'Phone Number' },
     { key: 'principalAmount', label: 'Principal Amount' },
@@ -41,255 +33,235 @@ export class ClientDetails {
     { key: 'paymentStatus', label: 'Status' },
     { key: 'actions', label: 'Actions' },
   ];
+  readonly displayedColumns = this.columnDefs.map((column) => column.key);
+  readonly dataSource = new MatTableDataSource<ViewClientData>([]);
+  readonly storageKey = 'loanManagerClientDetails';
+  readonly statusOptions = ['All', 'Pending', 'Partially Paid', 'Paid', 'Overdue'];
+  readonly interestTypeOptions = ['All', 'Simple Interest', 'Compound Interest'];
+  readonly frequencyOptions = ['All', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
 
-  clientData: ClientData[] = this.loadClients();
+  clients: ViewClientData[] = [];
+  selectedClient: ViewClientData | null = null;
+  selectedPaymentClient: ViewClientData | null = null;
+  selectedPaymentClientIndex: number | null = null;
+  searchTerm = '';
+  selectedStatus = 'All';
+  selectedInterestType = 'All';
+  selectedFrequency = 'All';
+  private readonly today = new Date();
 
-  get displayedColumns(): string[] {
-    return this.columnDefs.map((column) => column.key);
-  }
+  @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
 
-  get filteredClients(): ClientData[] {
-    const searchValue = this.searchText.trim().toLowerCase();
-
-    let filtered = this.clientData.filter((client) => {
-      const matchesSearch = !searchValue || client.clientName.toLowerCase().includes(searchValue);
-      const matchesStatus = this.statusFilter === 'All' || client.paymentStatus === this.statusFilter;
-      const matchesFrequency = this.frequencyFilter === 'All' || client.interestFrequency === this.frequencyFilter;
-
-      return matchesSearch && matchesStatus && matchesFrequency;
-    });
-
-    filtered = filtered.sort((a, b) => {
-      if (this.sortBy === 'dueDate') {
-        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-      }
-
-      if (this.sortBy === 'principalAmount') {
-        return b.principalAmount - a.principalAmount;
-      }
-
-      return 0;
-    });
-
-    return filtered;
-  }
-
-  get summaryCards() {
-    const totalClients = this.clientData.length;
-    const totalPrincipal = this.clientData.reduce((sum, client) => sum + client.principalAmount, 0);
-    const totalInterest = this.clientData.reduce((sum, client) => sum + this.getClientCalculation(client).totalInterest, 0);
-    const totalDue = this.clientData.reduce((sum, client) => sum + this.getClientCalculation(client).totalDue, 0);
-    const upcoming = this.clientData.filter((client) => client.paymentStatus === 'Upcoming').length;
-    const overdue = this.clientData.filter((client) => client.paymentStatus === 'Overdue').length;
-
-    return [
-      { label: 'Total Clients', value: totalClients, icon: 'groups', accent: 'blue' },
-      { label: 'Total Principal', value: this.formatCurrency(totalPrincipal), icon: 'currency_rupee', accent: 'navy' },
-      { label: 'Total Interest', value: this.formatCurrency(totalInterest), icon: 'trending_up', accent: 'green' },
-      { label: 'Total Amount Due', value: this.formatCurrency(totalDue), icon: 'receipt_long', accent: 'violet' },
-      { label: 'Upcoming Payments', value: upcoming, icon: 'schedule', accent: 'orange' },
-      { label: 'Overdue Payments', value: overdue, icon: 'warning', accent: 'red' },
-    ];
-  }
-
-  viewClient(client: ClientData): void {
-    this.selectedClient = client;
-    this.isDetailsOpen = true;
-  }
-
-  editClient(client: ClientData): void {
-    this.selectedClient = client;
-    this.isDetailsOpen = true;
-  }
-
-  deleteClient(clientName: string): void {
-    this.clientData = this.clientData.filter((client) => client.clientName !== clientName);
-    this.saveClients();
-
-    if (this.selectedClient?.clientName === clientName) {
-      this.closeDetails();
-    }
-  }
-
-  closeDetails(): void {
-    this.selectedClient = null;
-    this.isDetailsOpen = false;
-  }
-
-  getClientCalculation(client: ClientData) {
-    const periods = this.getInterestPeriods(client.startDate, client.dueDate, client.interestFrequency);
-    const interestPerPeriod = (client.principalAmount * client.interestRate) / 100;
-    const totalInterest = interestPerPeriod * periods;
-    const totalDue = client.principalAmount + totalInterest;
-    const amountPaid = client.amountPaid ?? 0;
-    const remaining = Math.max(totalDue - amountPaid, 0);
-
-    return {
-      periods,
-      interestPerPeriod,
-      totalInterest,
-      totalDue,
-      amountPaid,
-      remaining,
+  constructor(
+    private readonly router: Router,
+    private readonly loanInterest: LoanInterestService,
+  ) {
+    this.dataSource.filterPredicate = (client, filter) => this.matchesFilters(client, JSON.parse(filter));
+    this.dataSource.sortingDataAccessor = (client, property) => {
+      if (property === 'paymentStatus') return this.getStatus(client);
+      const value = client[property as keyof ViewClientData];
+      if (property === 'startDate' || property === 'dueDate') return new Date(String(value)).getTime();
+      return typeof value === 'number' ? value : String(value ?? '').toLocaleLowerCase();
     };
   }
 
-  getDueSummary(client: ClientData) {
-    const today = new Date();
-    const dueDate = new Date(client.dueDate);
-    const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (client.paymentStatus === 'Paid') {
-      return 'Paid';
-    }
-
-    if (diffDays > 0) {
-      return `Due in ${diffDays} days`;
-    }
-
-    if (diffDays === 0) {
-      return 'Due Today';
-    }
-
-    return `Overdue by ${Math.abs(diffDays)} days`;
+  ngOnInit(): void {
+    this.loadClients();
   }
 
-  getInterestPeriods(startDate: string, endDate: string, frequency: string): number {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffDays = Math.max(0, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+  ngAfterViewInit(): void {
+    this.dataSource.sort = this.sort;
+    this.dataSource.paginator = this.paginator;
+  }
 
-    if (diffDays <= 0) {
-      return 0;
-    }
+  get totalPrincipal(): number {
+    return this.clients.reduce((total, client) => total + this.toNumber(client.principalAmount), 0);
+  }
 
-    switch (frequency) {
-      case 'Daily':
-        return diffDays;
-      case 'Weekly':
-        return Math.floor(diffDays / 7);
-      case 'Monthly': {
-        const monthDiff = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-        return monthDiff > 0 ? monthDiff : 0;
+  get totalInterest(): number {
+    return this.clients.reduce((total, client) => total + this.getInterest(client), 0);
+  }
+
+  get totalCollected(): number {
+    return this.clients.reduce((total, client) => total + this.toNumber(client.amountPaid), 0);
+  }
+
+  get totalOutstanding(): number {
+    return this.clients.reduce((total, client) => total + this.getOutstanding(client), 0);
+  }
+
+  get activeLoans(): number {
+    return this.clients.filter((client) => this.getStatus(client) !== 'Paid').length;
+  }
+
+  get overdueLoans(): number {
+    return this.clients.filter((client) => this.getStatus(client) === 'Overdue').length;
+  }
+
+  get summaryCards(): { label: string; value: string; icon: string; tone: string }[] {
+    return [
+      { label: 'Total Clients', value: String(this.clients.length), icon: 'groups', tone: 'blue' },
+      { label: 'Active Loans', value: String(this.activeLoans), icon: 'account_balance', tone: 'teal' },
+      { label: 'Total Principal', value: this.formatCurrency(this.totalPrincipal), icon: 'payments', tone: 'green' },
+      { label: 'Total Interest', value: this.formatCurrency(this.totalInterest), icon: 'trending_up', tone: 'amber' },
+      { label: 'Total Collected', value: this.formatCurrency(this.totalCollected), icon: 'savings', tone: 'slate' },
+      { label: 'Total Outstanding', value: this.formatCurrency(this.totalOutstanding), icon: 'account_balance_wallet', tone: 'coral' },
+      { label: 'Overdue Loans', value: String(this.overdueLoans), icon: 'schedule', tone: 'rose' },
+    ];
+  }
+
+  loadClients(): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(this.storageKey) ?? '[]');
+      this.clients = Array.isArray(saved) ? saved : [];
+      let addedIds = false;
+      for (const client of this.clients) {
+        if (!client.id) {
+          client.id = this.createClientId();
+          addedIds = true;
+        }
       }
-      case 'Yearly':
-        return end.getFullYear() - start.getFullYear();
-      default:
-        return 0;
+      if (addedIds) window.localStorage.setItem(this.storageKey, JSON.stringify(this.clients));
+    } catch {
+      this.clients = [];
     }
+
+    this.dataSource.data = this.clients;
+    this.applyFilters();
   }
 
-  getStatusClass(status: string): string {
-    switch (status) {
-      case 'Paid':
-        return 'status-paid';
-      case 'Upcoming':
-        return 'status-upcoming';
-      case 'Overdue':
-        return 'status-overdue';
-      case 'Partially Paid':
-        return 'status-partial';
-      default:
-        return 'status-upcoming';
+  applyFilters(): void {
+    this.dataSource.filter = JSON.stringify({
+      search: this.searchTerm.trim().toLocaleLowerCase(),
+      status: this.selectedStatus,
+      interestType: this.selectedInterestType,
+      frequency: this.selectedFrequency,
+    });
+    if (this.dataSource.paginator) this.dataSource.paginator.firstPage();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.selectedStatus = 'All';
+    this.selectedInterestType = 'All';
+    this.selectedFrequency = 'All';
+    this.applyFilters();
+  }
+
+  viewClient(client: ViewClientData): void {
+    this.selectedClient = this.selectedClient === client ? null : client;
+  }
+
+  closeClientView(): void {
+    this.selectedClient = null;
+  }
+
+  editClient(client: ViewClientData): void {
+    if (!client.id) {
+      client.id = this.createClientId();
+      window.localStorage.setItem(this.storageKey, JSON.stringify(this.clients));
     }
+    this.router.navigate(['/clients/edit', client.id]);
+  }
+
+  recordPayment(client: ViewClientData): void {
+    this.selectedPaymentClient = client;
+    this.selectedPaymentClientIndex = this.clients.indexOf(client);
+  }
+
+  closePaymentPopup(): void {
+    this.selectedPaymentClient = null;
+    this.selectedPaymentClientIndex = null;
+  }
+
+  onPaymentSaved(updatedClient: ViewClientData): void {
+    const index = this.clients.findIndex((client) => client.phoneNumber === updatedClient.phoneNumber && client.clientName === updatedClient.clientName);
+    if (index >= 0) this.clients[index] = updatedClient;
+    this.dataSource.data = [...this.clients];
+    this.applyFilters();
+  }
+
+  getStatus(client: ViewClientData): string {
+    const interest = this.getInterest(client);
+    const paid = this.toNumber(client.amountPaid);
+    const outstanding = Math.max(0, this.toNumber(client.principalAmount) + interest - paid);
+
+    if (outstanding <= 0) return 'Paid';
+    if (this.loanInterest.elapsedDays(client.dueDate, this.today) > 0) return 'Overdue';
+    if (paid > 0) return 'Partially Paid';
+
+    const legacyStatus = String(client.paymentStatus ?? 'Pending');
+    return legacyStatus === 'Upcoming' || legacyStatus === 'Active' ? 'Pending' : legacyStatus;
+  }
+
+  getInterest(client: ViewClientData, throughDate: Date = this.today): number {
+    return this.loanInterest.calculateInterest({
+      principal: this.toNumber(client.principalAmount),
+      rate: this.toNumber(client.interestRate),
+      type: client.interestType ?? 'Simple Interest',
+      frequency: client.interestFrequency,
+      startDate: client.startDate,
+    }, throughDate);
+  }
+
+  getOverdueDays(client: ViewClientData): number {
+    return this.loanInterest.elapsedDays(client.dueDate, this.today);
+  }
+
+  getElapsedDays(client: ViewClientData): number {
+    return this.loanInterest.elapsedDays(client.startDate, this.today);
+  }
+
+  getElapsedMonths(client: ViewClientData): number {
+    return this.loanInterest.elapsedMonths(client.startDate, this.today);
+  }
+
+  getOverdueInterest(client: ViewClientData): number {
+    const overdueDays = this.getOverdueDays(client);
+    if (overdueDays <= 0) return 0;
+    return this.loanInterest.calculateOverdueInterest({
+      principal: this.toNumber(client.principalAmount),
+      rate: this.toNumber(client.interestRate),
+      type: client.interestType ?? 'Simple Interest',
+      frequency: client.interestFrequency,
+    }, client.dueDate, this.today);
+  }
+
+  getOutstanding(client: ViewClientData): number {
+    return this.loanInterest.calculateOutstandingBalance(
+      this.toNumber(client.principalAmount),
+      this.getInterest(client),
+      this.toNumber(client.amountPaid),
+    );
+  }
+
+  getStatusClass(client: ViewClientData): string {
+    return this.getStatus(client).toLocaleLowerCase().replace(/\s+/g, '-');
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(value);
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(value);
   }
 
-  formatRate(value: number): string {
-    return `${value}%`;
+  private matchesFilters(client: ViewClientData, filters: { search: string; status: string; interestType: string; frequency: string }): boolean {
+    const searchMatches = !filters.search || `${client.clientName} ${client.phoneNumber}`.toLocaleLowerCase().includes(filters.search);
+    const statusMatches = filters.status === 'All' || this.getStatus(client) === filters.status;
+    const typeMatches = filters.interestType === 'All' || (client.interestType ?? 'Simple Interest') === filters.interestType;
+    const frequencyMatches = filters.frequency === 'All' || client.interestFrequency === filters.frequency;
+    return searchMatches && statusMatches && typeMatches && frequencyMatches;
   }
 
-  formatDate(value: string): string {
-    return value ? new Date(value).toLocaleDateString() : '';
+  private toNumber(value: unknown): number {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : 0;
   }
 
-  private loadClients(): ClientData[] {
-    const defaultClients: ClientData[] = [
-      {
-        clientName: 'John Smith',
-        phoneNumber: '+1 555 0101',
-        principalAmount: 50000,
-        interestRate: 2,
-        interestFrequency: 'Monthly',
-        startDate: '2026-09-01',
-        dueDate: '2026-12-01',
-        paymentStatus: 'Upcoming',
-        amountPaid: 12000,
-      },
-      {
-        clientName: 'Aisha Khan',
-        phoneNumber: '+1 555 0145',
-        principalAmount: 75000,
-        interestRate: 3,
-        interestFrequency: 'Monthly',
-        startDate: '2026-08-10',
-        dueDate: '2026-09-22',
-        paymentStatus: 'Overdue',
-        amountPaid: 15000,
-      },
-      {
-        clientName: 'Michael Lee',
-        phoneNumber: '+1 555 0167',
-        principalAmount: 30000,
-        interestRate: 1.5,
-        interestFrequency: 'Weekly',
-        startDate: '2026-09-05',
-        dueDate: '2026-09-28',
-        paymentStatus: 'Partially Paid',
-        amountPaid: 15000,
-      },
-      {
-        clientName: 'Priya Nair',
-        phoneNumber: '+1 555 0182',
-        principalAmount: 120000,
-        interestRate: 4,
-        interestFrequency: 'Yearly',
-        startDate: '2025-12-01',
-        dueDate: '2026-12-01',
-        paymentStatus: 'Paid',
-        amountPaid: 123000,
-      },
-      {
-        clientName: 'David Clark',
-        phoneNumber: '+1 555 0198',
-        principalAmount: 22000,
-        interestRate: 2.5,
-        interestFrequency: 'Daily',
-        startDate: '2026-09-12',
-        dueDate: '2026-09-30',
-        paymentStatus: 'Upcoming',
-        amountPaid: 5000,
-      },
-    ];
-
-    if (typeof window === 'undefined') {
-      return defaultClients;
-    }
-
-    const savedClients = window.localStorage.getItem(this.storageKey);
-
-    if (!savedClients) {
-      return defaultClients;
-    }
-
-    try {
-      const parsedClients = JSON.parse(savedClients);
-      return Array.isArray(parsedClients) && parsedClients.length ? parsedClients : defaultClients;
-    } catch {
-      return defaultClients;
-    }
-  }
-
-  private saveClients(): void {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(this.storageKey, JSON.stringify(this.clientData));
-    }
+  private createClientId(): string {
+    return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   }
 }

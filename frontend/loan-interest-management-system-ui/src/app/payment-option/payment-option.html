@@ -1,0 +1,84 @@
+<div class="payment-backdrop" *ngIf="client as selectedClient" (click)="closeOnBackdrop($event)">
+	<section class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="payment-title" tabindex="-1">
+		<header class="modal-header">
+			<div>
+				<span class="modal-eyebrow">LOAN ACCOUNT</span>
+				<h2 id="payment-title">Record Payment</h2>
+				<p>{{ selectedClient.clientName }} · {{ selectedClient.phoneNumber }}</p>
+			</div>
+			<button mat-icon-button type="button" class="close-icon" aria-label="Close payment" matTooltip="Close" (click)="cancel()">
+				<mat-icon>close</mat-icon>
+			</button>
+		</header>
+
+		<form [formGroup]="paymentForm" (ngSubmit)="savePayment()">
+			<div class="modal-content">
+				<section class="payment-section">
+					<div class="section-title"><span class="section-mark client-mark"><mat-icon>person</mat-icon></span><h3>Client and loan</h3></div>
+					<div class="detail-grid">
+						<div class="detail-item"><span>Client name</span><strong>{{ selectedClient.clientName }}</strong></div>
+						<div class="detail-item"><span>Phone number</span><strong>{{ selectedClient.phoneNumber }}</strong></div>
+						<div class="detail-item"><span>Principal</span><strong>{{ principal | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+						<div class="detail-item"><span>Interest type and rate</span><strong>{{ selectedClient.interestType || 'Simple Interest' }} · {{ selectedClient.interestRate | number:'1.0-2' }}%</strong></div>
+						<div class="detail-item"><span>Frequency</span><strong>{{ selectedClient.interestFrequency }}</strong></div>
+						<div class="detail-item"><span>Start date</span><strong>{{ selectedClient.startDate | date:'dd MMM yyyy' }}</strong></div>
+						<div class="detail-item"><span>Due date</span><strong>{{ selectedClient.dueDate | date:'dd MMM yyyy' }}</strong></div>
+						<div class="detail-item"><span>Current status</span><strong><span class="status-badge" [ngClass]="statusClass">{{ status }}</span></strong></div>
+					</div>
+				</section>
+
+				<section class="payment-section">
+					<div class="section-title"><span class="section-mark summary-mark"><mat-icon>account_balance</mat-icon></span><h3>Current loan summary</h3></div>
+					<dl class="summary-list">
+						<div><dt>Original principal</dt><dd>{{ principal | currency:'INR':'symbol':'1.0-2':'en-IN' }}</dd></div>
+						<div><dt>Interest due</dt><dd>{{ interestDue | currency:'INR':'symbol':'1.0-2':'en-IN' }}</dd></div>
+						<div><dt>Total amount due</dt><dd>{{ totalAmountDue | currency:'INR':'symbol':'1.0-2':'en-IN' }}</dd></div>
+						<div><dt>Already paid</dt><dd>{{ alreadyPaid | currency:'INR':'symbol':'1.0-2':'en-IN' }}</dd></div>
+						<div class="outstanding-row"><dt>Current outstanding</dt><dd>{{ outstanding | currency:'INR':'symbol':'1.0-2':'en-IN' }}</dd></div>
+					</dl>
+					<div class="overdue-note" *ngIf="overdueDays > 0">
+						<mat-icon>schedule</mat-icon>
+						<span>Overdue by {{ overdueDays }} days. Overdue interest: {{ overdueInterest | currency:'INR':'symbol':'1.0-2':'en-IN' }}. No penalty is added.</span>
+					</div>
+				</section>
+
+				<section class="payment-section payment-entry-section">
+					<div class="section-title"><span class="section-mark entry-mark"><mat-icon>payments</mat-icon></span><h3>Payment details</h3></div>
+					<div class="form-grid">
+						<mat-form-field appearance="outline">
+							<mat-label>Payment amount</mat-label>
+							<span matTextPrefix>₹&nbsp;</span>
+							<input matInput type="number" min="0.01" step="0.01" formControlName="paymentAmount" />
+							<mat-error *ngIf="paymentForm.controls.paymentAmount.touched && paymentAmountError">{{ paymentAmountError }}</mat-error>
+						</mat-form-field>
+						<mat-form-field appearance="outline">
+							<mat-label>Payment date</mat-label>
+							<input matInput type="date" formControlName="paymentDate" />
+							<mat-error *ngIf="paymentForm.controls.paymentDate.touched && paymentForm.controls.paymentDate.hasError('required')">Payment date is required.</mat-error>
+							<mat-error *ngIf="paymentForm.controls.paymentDate.touched && paymentForm.controls.paymentDate.hasError('invalidDate')">Enter a valid payment date.</mat-error>
+						</mat-form-field>
+						<mat-form-field appearance="outline" class="notes-field">
+							<mat-label>Notes</mat-label>
+							<textarea matInput rows="2" formControlName="notes" placeholder="Paid through bank transfer"></textarea>
+						</mat-form-field>
+					</div>
+				</section>
+
+				<section class="payment-section after-payment-section">
+					<div class="section-title"><span class="section-mark after-mark"><mat-icon>trending_down</mat-icon></span><h3>After payment</h3></div>
+					<div class="after-payment-summary">
+						<div><span>New outstanding</span><strong>{{ previewAllocation.outstanding | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+						<div><span>Interest allocated</span><strong>{{ previewAllocation.interestPaid | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+						<div><span>Principal allocated</span><strong>{{ previewAllocation.principalPaid | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+						<div><span>Status after payment</span><strong><span class="status-badge" [ngClass]="previewStatusClass">{{ previewStatus }}</span></strong></div>
+					</div>
+				</section>
+			</div>
+
+			<footer class="modal-footer">
+				<button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+				<button mat-flat-button type="submit" class="save-button"><mat-icon>save</mat-icon>Save Payment</button>
+			</footer>
+		</form>
+	</section>
+</div>
