@@ -17,7 +17,7 @@
   overflow: hidden;
 
   .login-card {
-     width: 100%;
+    width: 100%;
     max-width: 640px;
     padding: 18px 18px 14px;
     border-radius: 10px;
@@ -25,7 +25,7 @@
     border: 1px solid rgba(42, 93, 245, 0.18);
     box-shadow: 0 18px 30px rgba(19, 33, 58, 0.08);
     overflow: hidden;
-    
+
     .login-header {
       text-align: center;
       padding: 8px 8px 4px;
@@ -100,6 +100,13 @@
           opacity: 0.7;
           box-shadow: none;
         }
+      }
+
+      .login-error {
+        margin: 4px 0 0;
+        color: #a32121;
+        font-size: 0.9rem;
+        text-align: center;
       }
 
       .signup-row {

@@ -8,7 +8,7 @@
 		</header>
 
 		<section class="summary-grid" aria-label="Loan portfolio summary">
-			<mat-card class="summary-card" *ngFor="let metric of summaryCards" [ngClass]="metric.tone">
+			<mat-card class="summary-card" *ngFor="let metric of summaryCards()" [ngClass]="metric.tone">
 				<div class="summary-icon"><mat-icon>{{ metric.icon }}</mat-icon></div>
 				<div class="summary-copy">
 					<span>{{ metric.label }}</span>
@@ -60,10 +60,12 @@
 				<div class="empty-icon"><mat-icon>groups</mat-icon></div>
 				<h2>No clients found</h2>
 				<p>Start by registering your first client.</p>
-				<a mat-flat-button class="add-client-button" routerLink="/newClient">
+				<button mat-flat-button class="add-client-button" routerLink="/newClient" 
+				[disabled]="!userName"
+				>
 					<mat-icon>add</mat-icon>
 					Add New Client
-				</a>
+			</button>
 			</div>
 
 			<ng-container *ngIf="clients.length > 0">
@@ -93,6 +95,7 @@
 									<ng-container *ngSwitchCase="'paymentStatus'">
 										<span class="status-badge" [ngClass]="getStatusClass(row)">{{ getStatus(row) }}</span>
 									</ng-container>
+									
 									<ng-container *ngSwitchCase="'actions'">
 										<button mat-icon-button type="button" class="row-action view-action" matTooltip="View client details" aria-label="View client details" (click)="viewClient(row)">
 											<mat-icon>visibility</mat-icon>
@@ -104,6 +107,7 @@
 											<mat-icon>payments</mat-icon>
 										</button>
 									</ng-container>
+
 								</ng-container>
 							</td>
 						</ng-container>

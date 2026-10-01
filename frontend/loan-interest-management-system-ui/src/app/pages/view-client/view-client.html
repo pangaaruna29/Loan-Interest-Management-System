@@ -35,33 +35,33 @@
 			<section class="detail-section calculation-section">
 				<div class="section-title"><span class="section-mark calculation-mark"><mat-icon>calculate</mat-icon></span><h3>Calculation summary</h3></div>
 				<div class="detail-grid three-columns">
-					<div class="detail-item"><span>Elapsed time</span><strong>{{ elapsedPeriod.years }}y {{ elapsedPeriod.months }}m {{ elapsedPeriod.days }}d</strong></div>
-					<div class="detail-item"><span>Elapsed days</span><strong>{{ elapsedDays }} days</strong></div>
+					<div class="detail-item"><span>Elapsed time</span><strong>{{ elapsedPeriod().years }}y {{ elapsedPeriod().months }}m {{ elapsedPeriod().days }}d</strong></div>
+					<div class="detail-item"><span>Elapsed days</span><strong>{{ elapsedDays() }} days</strong></div>
 					<div class="detail-item"><span>Interest method</span><strong>{{ selectedClient.interestType || 'Simple Interest' }}</strong></div>
 					<div class="detail-item"><span>Interest frequency</span><strong>{{ selectedClient.interestFrequency }}</strong></div>
-					<div class="detail-item"><span>Calculated interest</span><strong>{{ interestAmount | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
-					<div class="detail-item total-due"><span>Total amount due</span><strong>{{ totalAmountDue | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+					<div class="detail-item"><span>Calculated interest</span><strong>{{ interestAmount() | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+					<div class="detail-item total-due"><span>Total amount due</span><strong>{{ totalAmountDue() | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
 				</div>
 			</section>
 
 			<section class="detail-section payment-section">
 				<div class="section-title"><span class="section-mark payment-mark"><mat-icon>payments</mat-icon></span><h3>Payment summary</h3></div>
 				<div class="detail-grid four-columns">
-					<div class="detail-item"><span>Amount paid</span><strong>{{ totalPaid | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
-					<div class="detail-item"><span>Principal paid</span><strong>{{ principalPaid === null ? 'Not recorded' : (principalPaid | currency:'INR':'symbol':'1.0-2':'en-IN') }}</strong></div>
-					<div class="detail-item"><span>Interest paid</span><strong>{{ interestPaid === null ? 'Not recorded' : (interestPaid | currency:'INR':'symbol':'1.0-2':'en-IN') }}</strong></div>
-					<div class="detail-item outstanding"><span>Remaining balance</span><strong>{{ outstandingAmount | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+					<div class="detail-item"><span>Amount paid</span><strong>{{ totalPaid() | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+					<div class="detail-item"><span>Principal paid</span><strong>{{ principalPaid() === null ? 'Not recorded' : (principalPaid() | currency:'INR':'symbol':'1.0-2':'en-IN') }}</strong></div>
+					<div class="detail-item"><span>Interest paid</span><strong>{{ interestPaid() === null ? 'Not recorded' : (interestPaid() | currency:'INR':'symbol':'1.0-2':'en-IN') }}</strong></div>
+					<div class="detail-item outstanding"><span>Remaining balance</span><strong>{{ outstandingAmount() | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
 				</div>
-				<div class="status-line"><span class="status-label">Payment status</span><span class="status-badge" [ngClass]="statusClass"><span></span>{{ status }}</span></div>
+				<div class="status-line"><span class="status-label">Payment status</span><span class="status-badge" [ngClass]="statusClass()"><span></span>{{ status() }}</span></div>
 			</section>
 
 			<section class="detail-section history-section">
 				<div class="section-title"><span class="section-mark history-mark"><mat-icon>receipt_long</mat-icon></span><h3>Payment history</h3></div>
-				<div class="history-scroll" *ngIf="payments.length > 0; else noPaymentHistory">
+				<div class="history-scroll" *ngIf="payments().length > 0; else noPaymentHistory">
 					<table class="payment-table">
 						<thead><tr><th>Date</th><th>Amount</th><th>Principal</th><th>Interest</th><th>Notes</th></tr></thead>
 						<tbody>
-							<tr *ngFor="let payment of payments">
+							<tr *ngFor="let payment of payments()">
 								<td>{{ payment.paymentDate | date:'dd MMM yyyy' }}</td>
 								<td>{{ payment.paymentAmount | currency:'INR':'symbol':'1.0-2':'en-IN' }}</td>
 								<td>{{ payment.principalPaid === undefined ? '—' : (payment.principalPaid | currency:'INR':'symbol':'1.0-2':'en-IN') }}</td>
@@ -77,8 +77,8 @@
 			<section class="detail-section overdue-section">
 				<div class="section-title"><span class="section-mark overdue-mark"><mat-icon>schedule</mat-icon></span><h3>Overdue information</h3></div>
 				<div class="detail-grid two-columns">
-					<div class="detail-item"><span>Overdue days</span><strong>{{ overdueDays }} days</strong></div>
-					<div class="detail-item"><span>Overdue interest</span><strong>{{ overdueInterest | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+					<div class="detail-item"><span>Overdue days</span><strong>{{ overdueDays() }} days</strong></div>
+					<div class="detail-item"><span>Overdue interest</span><strong>{{ overdueInterest() | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
 				</div>
 				<p class="overdue-note">Overdue interest is shown separately and does not include an additional penalty.</p>
 			</section>

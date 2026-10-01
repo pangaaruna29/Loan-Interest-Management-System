@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MaterialModule } from '../material/material-module';
-import { LoanInterestService, PaymentHistoryEntry } from '../services/loan-interest.service';
-import { ClientPayment, ViewClientData } from '../pages/view-client/view-client';
+import { MaterialModule } from '../../material/material-module';
+import { LoanInterestService, PaymentHistoryEntry } from '../../services/loan-interest.service';
+import { ClientPayment, ViewClientData } from '../view-client/view-client';
 
 
 @Component({
@@ -18,13 +18,13 @@ export class PaymentOption {
   @Output() closePopup = new EventEmitter<void>();
   @Output() paymentSaved = new EventEmitter<ViewClientData>();
 
-   today = this.toDateInputValue(new Date());
-   paymentForm;
-  private  storageKey = 'loanManagerClientDetails';
+  today = this.toDateInputValue(new Date());
+  paymentForm;
+   storageKey = 'loanManagerClientDetails';
 
   constructor(
-    private  formBuilder: FormBuilder,
-    private  loanInterest: LoanInterestService,
+    private formBuilder: FormBuilder,
+    private loanInterest: LoanInterestService,
   ) {
     this.paymentForm = this.formBuilder.group({
       paymentAmount: [null as number | null, [Validators.required, Validators.min(0.01), (control) => this.amountLimitValidator(control.value)]],
@@ -33,83 +33,83 @@ export class PaymentOption {
     });
   }
 
-  get payments(): ClientPayment[] {
+  payments(): ClientPayment[] {
     return this.client?.payments ?? [];
   }
 
-  get paymentDate(): Date {
+  paymentDate(): Date {
     const value = this.paymentForm.controls.paymentDate.value;
     return this.parseDateInput(value ?? '') ?? new Date();
   }
 
-  get paymentDateText(): string {
+  paymentDateText(): string {
     return this.paymentForm.controls.paymentDate.value || this.today;
   }
 
-  get calculationDate(): Date {
+  calculationDate(): Date {
     return new Date();
   }
 
-  get principal(): number {
+  principal(): number {
     return this.toNumber(this.client?.principalAmount);
   }
 
-  get interestDue(): number {
-    return this.client ? this.calculateInterest(this.calculationDate) : 0;
+   interestDue(): number {
+    return this.client ? this.calculateInterest(this.calculationDate()) : 0;
   }
 
-  get totalAmountDue(): number {
-    return this.principal + this.interestDue;
+   totalAmountDue(): number {
+    return this.principal() + this.interestDue();
   }
 
-  get alreadyPaid(): number {
-    const recorded = this.payments.reduce((sum, payment) => sum + this.toNumber(payment.paymentAmount), 0);
+   alreadyPaid(): number {
+    const recorded = this.payments().reduce((sum, payment) => sum + this.toNumber(payment.paymentAmount), 0);
     return Math.max(recorded, this.toNumber(this.client?.amountPaid));
   }
 
-  get legacyAmountPaid(): number {
-    return Math.max(0, this.toNumber(this.client?.amountPaid) - this.payments.reduce((sum, payment) => sum + this.toNumber(payment.paymentAmount), 0));
+   legacyAmountPaid(): number {
+    return Math.max(0, this.toNumber(this.client?.amountPaid) - this.payments().reduce((sum, payment) => sum + this.toNumber(payment.paymentAmount), 0));
   }
 
-  get currentAllocation() {
-    return this.allocationFor(0, this.calculationDate);
+   currentAllocation() {
+    return this.allocationFor(0, this.calculationDate());
   }
 
-  get outstanding(): number {
-    return this.currentAllocation.outstanding;
+   outstanding(): number {
+    return this.currentAllocation().outstanding;
   }
 
-  get overdueDays(): number {
-    return this.client ? this.loanInterest.elapsedDays(this.client.dueDate, this.calculationDate) : 0;
+   overdueDays(): number {
+    return this.client ? this.loanInterest.elapsedDays(this.client.dueDate, this.calculationDate()) : 0;
   }
 
-  get overdueInterest(): number {
-    if (!this.client || this.overdueDays <= 0) return 0;
-    return this.loanInterest.calculateOverdueInterest(this.loanTerms, this.client.dueDate, this.calculationDate);
+   overdueInterest(): number {
+    if (!this.client || this.overdueDays() <= 0) return 0;
+    return this.loanInterest.calculateOverdueInterest(this.loanTerms(), this.client.dueDate, this.calculationDate());
   }
 
-  get previewAllocation() {
-    return this.allocationFor(this.toNumber(this.paymentForm.controls.paymentAmount.value), this.paymentDate);
+   previewAllocation() {
+    return this.allocationFor(this.toNumber(this.paymentForm.controls.paymentAmount.value), this.paymentDate());
   }
 
-  get previewStatus(): string {
-    const allocation = this.previewAllocation;
-    return this.loanInterest.calculatePaymentStatus(allocation.outstanding, this.client.dueDate, this.paymentDate, allocation.totalPaid);
+   previewStatus(): string {
+    const allocation = this.previewAllocation();
+    return this.loanInterest.calculatePaymentStatus(allocation.outstanding, this.client.dueDate, this.paymentDate(), allocation.totalPaid);
   }
 
-  get status(): string {
-    return this.loanInterest.calculatePaymentStatus(this.outstanding, this.client.dueDate, this.calculationDate, this.alreadyPaid);
+   status(): string {
+    return this.loanInterest.calculatePaymentStatus(this.outstanding(), this.client.dueDate, this.calculationDate(), this.alreadyPaid());
   }
 
-  get statusClass(): string {
-    return this.status.toLocaleLowerCase().replace(/\s+/g, '-');
+   statusClass(): string {
+    return this.status().toLocaleLowerCase().replace(/\s+/g, '-');
   }
 
-  get previewStatusClass(): string {
-    return this.previewStatus.toLocaleLowerCase().replace(/\s+/g, '-');
+   previewStatusClass(): string {
+    return this.previewStatus().toLocaleLowerCase().replace(/\s+/g, '-');
   }
 
-  get paymentAmountError(): string {
+   paymentAmountError(): string {
     const control = this.paymentForm.controls.paymentAmount;
     if (control.hasError('required')) return 'Payment amount is required.';
     if (control.hasError('min')) return 'Enter an amount greater than zero.';
@@ -124,8 +124,8 @@ export class PaymentOption {
     }
 
     const amount = this.toNumber(this.paymentForm.controls.paymentAmount.value);
-    const date = this.paymentDateText;
-    const allocation = this.allocationFor(amount, this.paymentDate);
+    const date = this.paymentDateText();
+    const allocation = this.allocationFor(amount, this.paymentDate());
     if (allocation.paymentAmount < amount) {
       this.paymentForm.controls.paymentAmount.setErrors({ exceedsOutstanding: true });
       return;
@@ -139,24 +139,24 @@ export class PaymentOption {
       interestPaid: allocation.interestPaid,
       notes: String(this.paymentForm.controls.notes.value ?? '').trim() || undefined,
     };
-    const updatedPayments = [...this.payments, payment];
+    const updatedPayments = [...this.payments(), payment];
     const updatedClient: ViewClientData = {
       ...this.client,
       payments: updatedPayments,
-      amountPaid: this.legacyAmountPaid + updatedPayments.reduce((sum, item) => sum + this.toNumber(item.paymentAmount), 0),
+      amountPaid: this.legacyAmountPaid() + updatedPayments.reduce((sum, item) => sum + this.toNumber(item.paymentAmount), 0),
     };
-    const updatedInterest = this.calculateInterest(this.calculationDate);
+    const updatedInterest = this.calculateInterest(this.calculationDate());
     const updatedAllocation = this.loanInterest.calculatePaymentAllocation(
       0,
-      this.principal,
+      this.principal(),
       updatedInterest,
       this.toHistory(updatedPayments),
-      this.legacyAmountPaid,
+      this.legacyAmountPaid(),
     );
     updatedClient.paymentStatus = this.loanInterest.calculatePaymentStatus(
       updatedAllocation.outstanding,
       updatedClient.dueDate,
-      this.calculationDate,
+      this.calculationDate(),
       updatedAllocation.totalPaid,
     );
 
@@ -182,9 +182,9 @@ export class PaymentOption {
     if (this.client) this.cancel();
   }
 
-  private get loanTerms() {
+    loanTerms() {
     return {
-      principal: this.principal,
+      principal: this.principal(),
       rate: this.toNumber(this.client?.interestRate),
       type: this.client?.interestType ?? 'Simple Interest',
       frequency: this.client?.interestFrequency ?? 'Monthly',
@@ -192,22 +192,22 @@ export class PaymentOption {
     };
   }
 
-  private calculateInterest(throughDate: Date): number {
-    return this.loanInterest.calculateInterest(this.loanTerms, throughDate);
+   calculateInterest(throughDate: Date): number {
+    return this.loanInterest.calculateInterest(this.loanTerms(), throughDate);
   }
 
-  private allocationFor(amount: number, throughDate: Date) {
+   allocationFor(amount: number, throughDate: Date) {
     if (!this.client) return this.loanInterest.calculatePaymentAllocation(0, 0, 0);
     return this.loanInterest.calculatePaymentAllocation(
       amount,
-      this.principal,
+      this.principal(),
       this.calculateInterest(throughDate),
-      this.toHistory(this.payments),
-      this.legacyAmountPaid,
+      this.toHistory(this.payments()),
+      this.legacyAmountPaid(),
     );
   }
 
-  private toHistory(payments: ClientPayment[]): PaymentHistoryEntry[] {
+   toHistory(payments: ClientPayment[]): PaymentHistoryEntry[] {
     return payments.map((payment) => ({
       paymentAmount: this.toNumber(payment.paymentAmount),
       principalPaid: payment.principalPaid,
@@ -215,31 +215,31 @@ export class PaymentOption {
     }));
   }
 
-  private amountLimitValidator(value: unknown) {
+   amountLimitValidator(value: unknown) {
     const amount = this.toNumber(value);
-    return amount > this.allocationFor(0, this.calculationDate).outstanding + 0.000001
+    return amount > this.allocationFor(0, this.calculationDate()).outstanding + 0.000001
       ? { exceedsOutstanding: true }
       : null;
   }
 
-  private validDateValidator(value: unknown) {
+   validDateValidator(value: unknown) {
     return this.parseDateInput(String(value ?? '')) ? null : { invalidDate: true };
   }
 
-  private parseDateInput(value: string): Date | null {
+   parseDateInput(value: string): Date | null {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
     const date = new Date(`${value}T00:00:00`);
     return Number.isNaN(date.getTime()) || this.toDateInputValue(date) !== value ? null : date;
   }
 
-  private toDateInputValue(date: Date): string {
+   toDateInputValue(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 
-  private persistClient(updatedClient: ViewClientData): boolean {
+   persistClient(updatedClient: ViewClientData): boolean {
     if (typeof window === 'undefined') return false;
     try {
       const saved: ViewClientData[] = JSON.parse(window.localStorage.getItem(this.storageKey) ?? '[]');
@@ -257,13 +257,13 @@ export class PaymentOption {
     }
   }
 
-  private createPaymentId(): string {
+   createPaymentId(): string {
     return typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   }
 
-  private toNumber(value: unknown): number {
+   toNumber(value: unknown): number {
     const number = Number(value);
     return Number.isFinite(number) ? number : 0;
   }

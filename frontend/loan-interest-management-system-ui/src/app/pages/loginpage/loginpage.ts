@@ -13,28 +13,30 @@ import { AuthService } from '../../services/auth.service';
 })
 export class Loginpage {
   loginForm: FormGroup;
+  loginError = '';
 
   constructor(private fb: FormBuilder, private router: Router, private authService: AuthService) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
+      rememberMe: [false, Validators.requiredTrue],
     });
   }
 
-  get emailControl() {
+  emailControl() {
     return this.loginForm.get('email');
   }
 
-  get passwordControl() {
+  passwordControl() {
     return this.loginForm.get('password');
   }
 
   getEmailErrorMessage(): string {
-    if (this.emailControl?.hasError('required')) {
+    if (this.emailControl()?.hasError('required')) {
       return 'Email is required';
     }
 
-    if (this.emailControl?.hasError('email')) {
+    if (this.emailControl()?.hasError('email')) {
       return 'Please enter a valid email address';
     }
 
@@ -42,11 +44,11 @@ export class Loginpage {
   }
 
   getPasswordErrorMessage(): string {
-    if (this.passwordControl?.hasError('required')) {
+    if (this.passwordControl()?.hasError('required')) {
       return 'Password is required';
     }
 
-    if (this.passwordControl?.hasError('minlength')) {
+    if (this.passwordControl()?.hasError('minlength')) {
       return 'Password must be at least 6 characters';
     }
 
@@ -54,6 +56,8 @@ export class Loginpage {
   }
 
   saveClient(): void {
+    this.loginError = '';
+
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
@@ -62,12 +66,15 @@ export class Loginpage {
     const email = (this.loginForm.value.email || '').trim().toLowerCase();
     const password = this.loginForm.value.password || '';
     const savedUsers = this.getStoredUsers();
-    const matchedUser = savedUsers.find((user: any) => {
-      return user.email?.toLowerCase() === email && user.password === password;
-    });
+    const matchedUser = savedUsers.find((user: any) => user.email?.toLowerCase() === email);
 
     if (!matchedUser) {
-      this.loginForm.setErrors({ invalidLogin: true });
+      this.loginError = 'User not found. Please create an account.';
+      return;
+    }
+
+    if (matchedUser.password !== password) {
+      this.loginError = 'Incorrect password. Please try again.';
       return;
     }
 

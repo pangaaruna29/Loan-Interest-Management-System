@@ -11,7 +11,7 @@
         <mat-form-field appearance="outline" class="half-width">
           <mat-label>Username</mat-label>
           <input matInput formControlName="username" placeholder="Enter your username" />
-          <mat-error *ngIf="usernameControl?.invalid && usernameControl?.touched">
+          <mat-error *ngIf="usernameControl()?.invalid && usernameControl()?.touched">
             {{ getUsernameErrorMessage() }}
           </mat-error>
         </mat-form-field>
@@ -19,7 +19,7 @@
         <mat-form-field appearance="outline" class="half-width">
           <mat-label>Phone Number</mat-label>
           <input matInput formControlName="phoneNumber" placeholder="Enter your phone number" />
-          <mat-error *ngIf="phoneNumberControl?.invalid && phoneNumberControl?.touched">
+          <mat-error *ngIf="phoneNumberControl()?.invalid && phoneNumberControl()?.touched">
             {{ getPhoneErrorMessage() }}
           </mat-error>
         </mat-form-field>
@@ -29,29 +29,20 @@
         <mat-form-field appearance="outline" class="half-width">
           <mat-label>Email</mat-label>
           <input matInput type="email" formControlName="email" placeholder="Enter your email" />
-          <mat-error *ngIf="emailControl?.invalid && emailControl?.touched">
+          <mat-error *ngIf="emailControl()?.invalid && emailControl()?.touched">
             {{ getEmailErrorMessage() }}
           </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="half-width">
           <mat-label>Password</mat-label>
-          <input
-            matInput
-            [type]="showPassword ? 'text' : 'password'"
-            formControlName="password"
-            placeholder="Enter your password"
-          />
-          <button
-            mat-icon-button
-            matSuffix
-            type="button"
-            aria-label="Toggle password visibility"
-            (click)="showPassword = !showPassword"
-          >
+          <input matInput [type]="showPassword ? 'text' : 'password'" formControlName="password"
+            placeholder="Enter your password" />
+          <button mat-icon-button matSuffix type="button" aria-label="Toggle password visibility"
+            (click)="showPassword = !showPassword">
             <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
           </button>
-          <mat-error *ngIf="passwordControl?.invalid && passwordControl?.touched">
+          <mat-error *ngIf="passwordControl()?.invalid && passwordControl()?.touched">
             {{ getPasswordErrorMessage() }}
           </mat-error>
         </mat-form-field>
@@ -59,27 +50,19 @@
 
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Confirm Password</mat-label>
-        <input
-          matInput
-          [type]="showConfirmPassword ? 'text' : 'password'"
-          formControlName="confirmPassword"
-          placeholder="Confirm your password"
-        />
-        <button
-          mat-icon-button
-          matSuffix
-          type="button"
-          aria-label="Toggle confirm password visibility"
-          (click)="showConfirmPassword = !showConfirmPassword"
-        >
+        <input matInput [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword"
+          placeholder="Confirm your password" />
+        <button mat-icon-button matSuffix type="button" aria-label="Toggle confirm password visibility"
+          (click)="showConfirmPassword = !showConfirmPassword">
           <mat-icon>{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
         </button>
-        <mat-error *ngIf="confirmPasswordControl?.invalid && confirmPasswordControl?.touched">
+        <mat-error *ngIf="confirmPasswordControl()?.invalid && confirmPasswordControl()?.touched">
           {{ getConfirmPasswordErrorMessage() }}
         </mat-error>
       </mat-form-field>
 
-      <button mat-flat-button color="primary" class="signup-button" type="submit">
+      <button mat-flat-button color="primary" class="signup-button" type="submit"
+        [disabled]="signupForm.invalid || signupForm?.get('password')?.value !== signupForm?.get('confirmPassword')?.value">
         Create Account
       </button>
 

@@ -26,8 +26,6 @@ export class Header {
   isLoggedIn = computed(() => !!this.userName());
   userInitial = computed(() => this.userName().charAt(0).toUpperCase() || 'U');
 
- 
-
   navigateToLogin(): void {
     this.rt.navigate(['/login']);
   }

@@ -25,23 +25,23 @@ export class Signuppage {
     });
   }
 
-  get usernameControl() {
+  usernameControl() {
     return this.signupForm.get('username');
   }
 
-  get phoneNumberControl() {
+  phoneNumberControl() {
     return this.signupForm.get('phoneNumber');
   }
 
-  get emailControl() {
+  emailControl() {
     return this.signupForm.get('email');
   }
 
-  get passwordControl() {
+  passwordControl() {
     return this.signupForm.get('password');
   }
 
-  get confirmPasswordControl() {
+  confirmPasswordControl() {
     return this.signupForm.get('confirmPassword');
   }
 
@@ -64,47 +64,47 @@ export class Signuppage {
   }
 
   getUsernameErrorMessage(): string {
-    if (this.usernameControl?.hasError('required')) {
+    if (this.usernameControl()?.hasError('required')) {
       return 'Username is required';
     }
     return '';
   }
 
   getPhoneErrorMessage(): string {
-    if (this.phoneNumberControl?.hasError('required')) {
+    if (this.phoneNumberControl()?.hasError('required')) {
       return 'Phone number is required';
     }
-    if (this.phoneNumberControl?.hasError('pattern')) {
+    if (this.phoneNumberControl()?.hasError('pattern')) {
       return 'Phone number must be 10 digits';
     }
     return '';
   }
 
   getEmailErrorMessage(): string {
-    if (this.emailControl?.hasError('required')) {
+    if (this.emailControl()?.hasError('required')) {
       return 'Email is required';
     }
-    if (this.emailControl?.hasError('email')) {
+    if (this.emailControl()?.hasError('email')) {
       return 'Please enter a valid email';
     }
     return '';
   }
 
   getPasswordErrorMessage(): string {
-    if (this.passwordControl?.hasError('required')) {
+    if (this.passwordControl()?.hasError('required')) {
       return 'Password is required';
     }
-    if (this.passwordControl?.hasError('minlength')) {
+    if (this.passwordControl()?.hasError('minlength')) {
       return 'Password must be at least 6 characters';
     }
     return '';
   }
 
   getConfirmPasswordErrorMessage(): string {
-    if (this.confirmPasswordControl?.hasError('required')) {
+    if (this.confirmPasswordControl()?.hasError('required')) {
       return 'Please confirm your password';
     }
-    if (this.confirmPasswordControl?.hasError('passwordMismatch')) {
+    if (this.confirmPasswordControl()?.hasError('passwordMismatch')) {
       return 'Passwords do not match';
     }
     return '';

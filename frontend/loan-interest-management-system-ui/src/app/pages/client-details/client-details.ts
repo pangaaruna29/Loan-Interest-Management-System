@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, input, OnInit, ViewChild } from '@angular/core';
 import { MaterialModule } from '../../material/material-module';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -8,7 +8,8 @@ import { MatTableDataSource } from '@angular/material/table';
 import { Router, RouterModule } from '@angular/router';
 import { LoanInterestService } from '../../services/loan-interest.service';
 import { ViewClient, ViewClientData } from '../view-client/view-client';
-import { PaymentOption } from '../../payment-option/payment-option';
+import { PaymentOption } from '../payment-option/payment-option';
+import { AuthService } from '../../services/auth.service';
 
 interface ClientColumn {
   key: string;
@@ -33,7 +34,7 @@ export class ClientDetails implements OnInit, AfterViewInit {
     { key: 'paymentStatus', label: 'Status' },
     { key: 'actions', label: 'Actions' },
   ];
-   displayedColumns = this.columnDefs.map((column) => column.key);
+  displayedColumns = this.columnDefs.filter((column) => column.key !== 'actions').map((column) => column.key);
    dataSource = new MatTableDataSource<ViewClientData>([]);
    storageKey = 'loanManagerClientDetails';
    statusOptions = ['All', 'Pending', 'Partially Paid', 'Paid', 'Overdue'];
@@ -48,7 +49,8 @@ export class ClientDetails implements OnInit, AfterViewInit {
   selectedStatus = 'All';
   selectedInterestType = 'All';
   selectedFrequency = 'All';
-  private  today = new Date();
+  today = new Date();
+  userName:string='';
 
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -56,6 +58,7 @@ export class ClientDetails implements OnInit, AfterViewInit {
   constructor(
     private  router: Router,
     private  loanInterest: LoanInterestService,
+    private authservice: AuthService
   ) {
     this.dataSource.filterPredicate = (client, filter) => this.matchesFilters(client, JSON.parse(filter));
     this.dataSource.sortingDataAccessor = (client, property) => {
@@ -68,6 +71,12 @@ export class ClientDetails implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.loadClients();
+    this.authservice.currentUser$.subscribe(user => {
+      this.userName = user ? user : ''
+      this.displayedColumns = this.columnDefs
+        .filter((column) => column.key !== 'actions' || Boolean(this.userName))
+        .map((column) => column.key);
+    })
   }
 
   ngAfterViewInit(): void {
@@ -75,39 +84,39 @@ export class ClientDetails implements OnInit, AfterViewInit {
     this.dataSource.paginator = this.paginator;
   }
 
-  get totalPrincipal(): number {
+  totalPrincipal(): number {
     return this.clients.reduce((total, client) => total + this.toNumber(client.principalAmount), 0);
   }
 
-  get totalInterest(): number {
+  totalInterest(): number {
     return this.clients.reduce((total, client) => total + this.getInterest(client), 0);
   }
 
-  get totalCollected(): number {
+  totalCollected(): number {
     return this.clients.reduce((total, client) => total + this.toNumber(client.amountPaid), 0);
   }
 
-  get totalOutstanding(): number {
+   totalOutstanding(): number {
     return this.clients.reduce((total, client) => total + this.getOutstanding(client), 0);
   }
 
-  get activeLoans(): number {
+  activeLoans(): number {
     return this.clients.filter((client) => this.getStatus(client) !== 'Paid').length;
   }
 
-  get overdueLoans(): number {
+  overdueLoans(): number {
     return this.clients.filter((client) => this.getStatus(client) === 'Overdue').length;
   }
 
-  get summaryCards(): { label: string; value: string; icon: string; tone: string }[] {
+  summaryCards(): { label: string; value: string; icon: string; tone: string }[] {
     return [
       { label: 'Total Clients', value: String(this.clients.length), icon: 'groups', tone: 'blue' },
-      { label: 'Active Loans', value: String(this.activeLoans), icon: 'account_balance', tone: 'teal' },
-      { label: 'Total Principal', value: this.formatCurrency(this.totalPrincipal), icon: 'payments', tone: 'green' },
-      { label: 'Total Interest', value: this.formatCurrency(this.totalInterest), icon: 'trending_up', tone: 'amber' },
-      { label: 'Total Collected', value: this.formatCurrency(this.totalCollected), icon: 'savings', tone: 'slate' },
-      { label: 'Total Outstanding', value: this.formatCurrency(this.totalOutstanding), icon: 'account_balance_wallet', tone: 'coral' },
-      { label: 'Overdue Loans', value: String(this.overdueLoans), icon: 'schedule', tone: 'rose' },
+      { label: 'Active Loans', value: String(this.activeLoans()), icon: 'account_balance', tone: 'teal' },
+      { label: 'Total Principal', value: this.formatCurrency(this.totalPrincipal()), icon: 'payments', tone: 'green' },
+      { label: 'Total Interest', value: this.formatCurrency(this.totalInterest()), icon: 'trending_up', tone: 'amber' },
+      { label: 'Total Collected', value: this.formatCurrency(this.totalCollected()), icon: 'savings', tone: 'slate' },
+      { label: 'Total Outstanding', value: this.formatCurrency(this.totalOutstanding()), icon: 'account_balance_wallet', tone: 'coral' },
+      { label: 'Overdue Loans', value: String(this.overdueLoans()), icon: 'schedule', tone: 'rose' },
     ];
   }
 
@@ -246,7 +255,7 @@ export class ClientDetails implements OnInit, AfterViewInit {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(value);
   }
 
-  private matchesFilters(client: ViewClientData, filters: { search: string; status: string; interestType: string; frequency: string }): boolean {
+   matchesFilters(client: ViewClientData, filters: { search: string; status: string; interestType: string; frequency: string }): boolean {
     const searchMatches = !filters.search || `${client.clientName} ${client.phoneNumber}`.toLocaleLowerCase().includes(filters.search);
     const statusMatches = filters.status === 'All' || this.getStatus(client) === filters.status;
     const typeMatches = filters.interestType === 'All' || (client.interestType ?? 'Simple Interest') === filters.interestType;
@@ -254,12 +263,12 @@ export class ClientDetails implements OnInit, AfterViewInit {
     return searchMatches && statusMatches && typeMatches && frequencyMatches;
   }
 
-  private toNumber(value: unknown): number {
+   toNumber(value: unknown): number {
     const number = Number(value);
     return Number.isFinite(number) ? number : 0;
   }
 
-  private createClientId(): string {
+   createClientId(): string {
     return typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2)}`;

@@ -14,7 +14,7 @@ import { ViewClientData } from '../view-client/view-client';
 })
 export class ClientForm implements OnInit {
   clientForm: FormGroup;
-  private  storageKey = 'loanManagerClientDetails';
+    storageKey = 'loanManagerClientDetails';
   isEditMode = false;
   selectedClient: ViewClientData | null = null;
 
@@ -60,7 +60,7 @@ export class ClientForm implements OnInit {
     });
   }
 
-  private dueDateAfterStartValidator(): ValidatorFn {
+   dueDateAfterStartValidator(): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
       const dueDate = control.value;
       const startDate = this.clientForm?.get('startDate')?.value;
@@ -192,7 +192,7 @@ export class ClientForm implements OnInit {
   }
 
 
-  private getSavedClients(): ViewClientData[] {
+   getSavedClients(): ViewClientData[] {
     if (typeof window === 'undefined') {
       return [];
     }
@@ -211,23 +211,23 @@ export class ClientForm implements OnInit {
     }
   }
 
-  private formatDateValue(value: Date | string): string {
+   formatDateValue(value: Date | string): string {
     const date = new Date(value);
     return date.toISOString().split('T')[0];
   }
 
-  private parseDateValue(value: string): Date | null {
+   parseDateValue(value: string): Date | null {
     const date = new Date(`${value}T00:00:00`);
     return Number.isNaN(date.getTime()) ? null : date;
   }
 
-  private createClientId(): string {
+   createClientId(): string {
     return typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   }
 
-  private toNumber(value: unknown): number {
+   toNumber(value: unknown): number {
     const number = Number(value);
     return Number.isFinite(number) ? number : 0;
   }

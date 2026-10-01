@@ -6,7 +6,15 @@
     </a>
 
     <nav class="main-nav" aria-label="Main navigation">
-      <a *ngFor="let item of navItems" [routerLink]="[`/${item.key}`]">{{ item.label }}</a>
+      <ng-container *ngIf="userName();else navitems">
+        <a *ngFor="let item of navItems" [routerLink]="[`/${item.key}`]">{{ item.label }}</a>
+
+      </ng-container>
+      <ng-template #navitems>
+
+        <a *ngFor="let item of navItems" [routerLink]="[`/${item.key}`]">{{ item.label!='New Client'?item.label:'' }}</a>
+
+      </ng-template>
     </nav>
 
     <button

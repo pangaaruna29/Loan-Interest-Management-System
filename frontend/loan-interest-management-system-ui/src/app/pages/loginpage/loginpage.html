@@ -6,12 +6,12 @@
       <p>Sign in to continue managing your loans and client records</p>
     </div>
 
-    <form [formGroup]="loginForm"  class="login-form">
+    <form [formGroup]="loginForm" (ngSubmit)="saveClient()" class="login-form">
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Email</mat-label>
         <input matInput type="email" formControlName="email" placeholder="name@example.com" />
         <mat-icon matSuffix>email</mat-icon>
-        <mat-error *ngIf="emailControl?.invalid && emailControl?.touched">
+        <mat-error *ngIf="emailControl()?.invalid && emailControl()?.touched">
           {{ getEmailErrorMessage() }}
         </mat-error>
       </mat-form-field>
@@ -20,19 +20,21 @@
         <mat-label>Password</mat-label>
         <input matInput type="password" formControlName="password" placeholder="Enter your password" />
         <mat-icon matSuffix>lock</mat-icon>
-        <mat-error *ngIf="passwordControl?.invalid && passwordControl?.touched">
+        <mat-error *ngIf="passwordControl()?.invalid && passwordControl()?.touched">
           {{ getPasswordErrorMessage() }}
         </mat-error>
       </mat-form-field>
 
       <div class="form-extra">
-        <mat-checkbox color="primary">Remember me</mat-checkbox>
+        <mat-checkbox color="primary" formControlName="rememberMe">Remember me</mat-checkbox>
         <a href="#" class="forgot-password">Forgot password?</a>
       </div>
 
-      <button mat-flat-button color="primary" class="login-button" type="submit" (click)="saveClient()" [disabled]="loginForm.invalid">
+      <button mat-flat-button color="primary" class="login-button" type="submit" [disabled]="loginForm.invalid">
         Sign In
       </button>
+
+      <p *ngIf="loginError" class="login-error" role="alert">{{ loginError }}</p>
 
       <div class="signup-row">
         <span>New here?</span>
