@@ -1,0 +1,48 @@
+<mat-toolbar class="topbar" color="transparent">
+  <div class="nav-shell">
+    <a class="brand" href="#" aria-label="Loan Manager home">
+      <span class="brand-mark">LM</span>
+      <span>Loan Manager</span>
+    </a>
+
+    <nav class="main-nav" aria-label="Main navigation">
+      <ng-container *ngIf="userName();else navitems">
+        <a *ngFor="let item of navItems" [routerLink]="[`/${item.key}`]">{{ item.label }}</a>
+
+      </ng-container>
+      <ng-template #navitems>
+
+        <a *ngFor="let item of navItems" [routerLink]="[`/${item.key}`]">{{ item.label!='New Client'?item.label:'' }}</a>
+
+      </ng-template>
+    </nav>
+
+    <button
+      *ngIf="!isLoggedIn()"
+      mat-flat-button
+      class="signup-btn"
+      type="button"
+      (click)="navigateToLogin()"
+    >
+      Login
+    </button>
+
+    <button
+      *ngIf="isLoggedIn()"
+      type="button"
+      class="user-account"
+      [attr.title]="userName()"
+      [attr.aria-label]="'Open user menu for ' + userName()"
+      [matMenuTriggerFor]="userMenu"
+    >
+      <span class="user-avatar">{{ userInitial() }}</span>
+    </button>
+
+    <mat-menu #userMenu="matMenu">
+      <button class="logout-btn" type="button" (click)="navigateToLogout()">
+        Logout
+      </button>
+    </mat-menu>
+  </div>
+</mat-toolbar>
+

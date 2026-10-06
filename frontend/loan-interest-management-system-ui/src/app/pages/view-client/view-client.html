@@ -1,0 +1,91 @@
+<div class="modal-backdrop" *ngIf="client as selectedClient" (click)="onBackdropClick($event)">
+	<section class="client-modal" role="dialog" aria-modal="true" aria-labelledby="client-modal-title" tabindex="-1">
+		<header class="modal-header">
+			<div>
+				<span class="modal-eyebrow">LOAN ACCOUNT</span>
+				<h2 id="client-modal-title">Client Details</h2>
+				<p>Account overview and repayment information</p>
+			</div>
+			<button mat-icon-button type="button" class="close-icon" aria-label="Close client details" matTooltip="Close" (click)="closePopup()">
+				<mat-icon>close</mat-icon>
+			</button>
+		</header>
+
+		<div class="modal-content">
+			<section class="detail-section">
+				<div class="section-title"><span class="section-mark client-mark"><mat-icon>person</mat-icon></span><h3>Client information</h3></div>
+				<div class="detail-grid two-columns">
+					<div class="detail-item"><span>Client name</span><strong>{{ selectedClient.clientName }}</strong></div>
+					<div class="detail-item"><span>Phone number</span><strong>{{ selectedClient.phoneNumber }}</strong></div>
+				</div>
+			</section>
+
+			<section class="detail-section">
+				<div class="section-title"><span class="section-mark loan-mark"><mat-icon>account_balance</mat-icon></span><h3>Loan information</h3></div>
+				<div class="detail-grid three-columns">
+					<div class="detail-item emphasis"><span>Original principal</span><strong>{{ selectedClient.principalAmount | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+					<div class="detail-item"><span>Interest type</span><strong>{{ selectedClient.interestType || 'Simple Interest' }}</strong></div>
+					<div class="detail-item"><span>Interest rate</span><strong>{{ selectedClient.interestRate | number:'1.0-2' }}%</strong></div>
+					<div class="detail-item"><span>Frequency</span><strong>{{ selectedClient.interestFrequency }}</strong></div>
+					<div class="detail-item"><span>Start date</span><strong>{{ selectedClient.startDate | date:'dd MMM yyyy' }}</strong></div>
+					<div class="detail-item"><span>Due date</span><strong>{{ selectedClient.dueDate | date:'dd MMM yyyy' }}</strong></div>
+				</div>
+			</section>
+
+			<section class="detail-section calculation-section">
+				<div class="section-title"><span class="section-mark calculation-mark"><mat-icon>calculate</mat-icon></span><h3>Calculation summary</h3></div>
+				<div class="detail-grid three-columns">
+					<div class="detail-item"><span>Elapsed time</span><strong>{{ elapsedPeriod().years }}y {{ elapsedPeriod().months }}m {{ elapsedPeriod().days }}d</strong></div>
+					<div class="detail-item"><span>Elapsed days</span><strong>{{ elapsedDays() }} days</strong></div>
+					<div class="detail-item"><span>Interest method</span><strong>{{ selectedClient.interestType || 'Simple Interest' }}</strong></div>
+					<div class="detail-item"><span>Interest frequency</span><strong>{{ selectedClient.interestFrequency }}</strong></div>
+					<div class="detail-item"><span>Calculated interest</span><strong>{{ interestAmount() | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+					<div class="detail-item total-due"><span>Total amount due</span><strong>{{ totalAmountDue() | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+				</div>
+			</section>
+
+			<section class="detail-section payment-section">
+				<div class="section-title"><span class="section-mark payment-mark"><mat-icon>payments</mat-icon></span><h3>Payment summary</h3></div>
+				<div class="detail-grid four-columns">
+					<div class="detail-item"><span>Amount paid</span><strong>{{ totalPaid() | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+					<div class="detail-item"><span>Principal paid</span><strong>{{ principalPaid() === null ? 'Not recorded' : (principalPaid() | currency:'INR':'symbol':'1.0-2':'en-IN') }}</strong></div>
+					<div class="detail-item"><span>Interest paid</span><strong>{{ interestPaid() === null ? 'Not recorded' : (interestPaid() | currency:'INR':'symbol':'1.0-2':'en-IN') }}</strong></div>
+					<div class="detail-item outstanding"><span>Remaining balance</span><strong>{{ outstandingAmount() | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+				</div>
+				<div class="status-line"><span class="status-label">Payment status</span><span class="status-badge" [ngClass]="statusClass()"><span></span>{{ status() }}</span></div>
+			</section>
+
+			<section class="detail-section history-section">
+				<div class="section-title"><span class="section-mark history-mark"><mat-icon>receipt_long</mat-icon></span><h3>Payment history</h3></div>
+				<div class="history-scroll" *ngIf="payments().length > 0; else noPaymentHistory">
+					<table class="payment-table">
+						<thead><tr><th>Date</th><th>Amount</th><th>Principal</th><th>Interest</th><th>Notes</th></tr></thead>
+						<tbody>
+							<tr *ngFor="let payment of payments()">
+								<td>{{ payment.paymentDate | date:'dd MMM yyyy' }}</td>
+								<td>{{ payment.paymentAmount | currency:'INR':'symbol':'1.0-2':'en-IN' }}</td>
+								<td>{{ payment.principalPaid === undefined ? '—' : (payment.principalPaid | currency:'INR':'symbol':'1.0-2':'en-IN') }}</td>
+								<td>{{ payment.interestPaid === undefined ? '—' : (payment.interestPaid | currency:'INR':'symbol':'1.0-2':'en-IN') }}</td>
+								<td>{{ payment.notes || '—' }}</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<ng-template #noPaymentHistory><p class="history-empty">No payment history has been recorded for this client.</p></ng-template>
+			</section>
+
+			<section class="detail-section overdue-section">
+				<div class="section-title"><span class="section-mark overdue-mark"><mat-icon>schedule</mat-icon></span><h3>Overdue information</h3></div>
+				<div class="detail-grid two-columns">
+					<div class="detail-item"><span>Overdue days</span><strong>{{ overdueDays() }} days</strong></div>
+					<div class="detail-item"><span>Overdue interest</span><strong>{{ overdueInterest() | currency:'INR':'symbol':'1.0-2':'en-IN' }}</strong></div>
+				</div>
+				<p class="overdue-note">Overdue interest is shown separately and does not include an additional penalty.</p>
+			</section>
+		</div>
+
+		<footer class="modal-footer">
+			<button mat-stroked-button type="button" (click)="closePopup()">Close</button>
+		</footer>
+	</section>
+</div>

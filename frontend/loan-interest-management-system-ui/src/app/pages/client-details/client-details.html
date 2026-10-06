@@ -1,0 +1,130 @@
+<main class="client-details-page">
+	<div class="page-shell">
+		<header class="page-heading">
+			<div>
+				<h1>Client Details</h1>
+				<p>Keep track of your clients, loan terms, and repayment progress.</p>
+			</div>
+		</header>
+
+		<section class="summary-grid" aria-label="Loan portfolio summary">
+			<mat-card class="summary-card" *ngFor="let metric of summaryCards()" [ngClass]="metric.tone">
+				<div class="summary-icon"><mat-icon>{{ metric.icon }}</mat-icon></div>
+				<div class="summary-copy">
+					<span>{{ metric.label }}</span>
+					<strong>{{ metric.value }}</strong>
+				</div>
+			</mat-card>
+		</section>
+
+		<section class="clients-section" aria-labelledby="clients-title">
+			<div class="section-heading">
+				<div>
+					<h2 id="clients-title">Registered clients</h2>
+					<p>{{ clients.length }} {{ clients.length === 1 ? 'client' : 'clients' }} in your portfolio</p>
+				</div>
+			</div>
+
+			<div class="filter-bar" *ngIf="clients.length > 0">
+				<mat-form-field appearance="outline" class="search-field">
+					<mat-label>Search clients</mat-label>
+					<mat-icon matPrefix>search</mat-icon>
+					<input matInput [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()" placeholder="Name or phone number" />
+				</mat-form-field>
+
+				<mat-form-field appearance="outline">
+					<mat-label>Status</mat-label>
+					<mat-select [(ngModel)]="selectedStatus" (ngModelChange)="applyFilters()">
+						<mat-option *ngFor="let option of statusOptions" [value]="option">{{ option }}</mat-option>
+					</mat-select>
+				</mat-form-field>
+
+				<mat-form-field appearance="outline">
+					<mat-label>Interest type</mat-label>
+					<mat-select [(ngModel)]="selectedInterestType" (ngModelChange)="applyFilters()">
+						<mat-option *ngFor="let option of interestTypeOptions" [value]="option">{{ option }}</mat-option>
+					</mat-select>
+				</mat-form-field>
+
+				<mat-form-field appearance="outline">
+					<mat-label>Frequency</mat-label>
+					<mat-select [(ngModel)]="selectedFrequency" (ngModelChange)="applyFilters()">
+						<mat-option *ngFor="let option of frequencyOptions" [value]="option">{{ option }}</mat-option>
+					</mat-select>
+				</mat-form-field>
+
+				<button mat-button type="button" class="clear-filters" (click)="clearFilters()">Clear filters</button>
+			</div>
+
+			<div class="empty-state" *ngIf="clients.length === 0">
+				<div class="empty-icon"><mat-icon>groups</mat-icon></div>
+				<h2>No clients found</h2>
+				<p>Start by registering your first client.</p>
+				<button mat-flat-button class="add-client-button" routerLink="/newClient" 
+				[disabled]="!userName"
+				>
+					<mat-icon>add</mat-icon>
+					Add New Client
+			</button>
+			</div>
+
+			<ng-container *ngIf="clients.length > 0">
+				<div class="table-scroll">
+					<table mat-table [dataSource]="dataSource" matSort class="clients-table">
+						<ng-container *ngFor="let column of columnDefs" [matColumnDef]="column.key">
+							<th mat-header-cell *matHeaderCellDef mat-sort-header [disabled]="column.key === 'actions'">{{ column.label }}</th>
+							<td
+								mat-cell
+								*matCellDef="let row"
+								[class.client-name-cell]="column.key === 'clientName'"
+								[class.amount-cell]="column.key === 'principalAmount'"
+								[class.actions-cell]="column.key === 'actions'"
+							>
+								<ng-container [ngSwitch]="column.key">
+									<ng-container *ngSwitchCase="'clientName'">
+										<span class="client-name">{{ row.clientName }}</span>
+									</ng-container>
+									<ng-container *ngSwitchCase="'phoneNumber'">{{ row.phoneNumber }}</ng-container>
+									<ng-container *ngSwitchCase="'principalAmount'">
+										{{ row.principalAmount | currency:'INR':'symbol':'1.0-2':'en-IN' }}
+									</ng-container>
+									<ng-container *ngSwitchCase="'interestRate'">{{ row.interestRate | number:'1.0-2' }}%</ng-container>
+									<ng-container *ngSwitchCase="'interestFrequency'">{{ row.interestFrequency }}</ng-container>
+									<ng-container *ngSwitchCase="'startDate'">{{ row.startDate | date:'dd MMM yyyy' }}</ng-container>
+									<ng-container *ngSwitchCase="'dueDate'">{{ row.dueDate | date:'dd MMM yyyy' }}</ng-container>
+									<ng-container *ngSwitchCase="'paymentStatus'">
+										<span class="status-badge" [ngClass]="getStatusClass(row)">{{ getStatus(row) }}</span>
+									</ng-container>
+									
+									<ng-container *ngSwitchCase="'actions'">
+										<button mat-icon-button type="button" class="row-action view-action" matTooltip="View client details" aria-label="View client details" (click)="viewClient(row)">
+											<mat-icon>visibility</mat-icon>
+										</button>
+										<button mat-icon-button type="button" class="row-action edit-action" matTooltip="Edit client" aria-label="Edit client" (click)="editClient(row)">
+											<mat-icon>edit</mat-icon>
+										</button>
+										<button mat-icon-button type="button" class="row-action payment-action" matTooltip="Record payment" aria-label="Record payment" (click)="recordPayment(row)">
+											<mat-icon>payments</mat-icon>
+										</button>
+									</ng-container>
+
+								</ng-container>
+							</td>
+						</ng-container>
+
+						<tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+						<tr mat-row *matRowDef="let row; columns: displayedColumns" class="client-row"></tr>
+						<tr class="mat-row" *matNoDataRow>
+							<td class="no-results" [attr.colspan]="displayedColumns.length">No clients match these filters.</td>
+						</tr>
+					</table>
+				</div>
+
+				<mat-paginator [pageSizeOptions]="[5, 10, 25]" [pageSize]="10" showFirstLastButtons aria-label="Select page of clients"></mat-paginator>
+			</ng-container>
+
+		</section>
+	</div>
+	<app-view-client *ngIf="selectedClient" [client]="selectedClient" (close)="closeClientView()"></app-view-client>
+	<app-payment-option *ngIf="selectedPaymentClient" [client]="selectedPaymentClient" [clientIndex]="selectedPaymentClientIndex" (paymentSaved)="onPaymentSaved($event)" (closePopup)="closePaymentPopup()"></app-payment-option>
+</main>

@@ -1,0 +1,11 @@
+<main class="logout-page">
+  <mat-card class="logout-card">
+    <div class="logout-icon"><mat-icon>logout</mat-icon></div>
+    <h1>Are you sure you want to logout?</h1>
+    <p>Your current session will be removed, but your registered users and client details will remain.</p>
+    <div class="logout-actions">
+      <button mat-stroked-button type="button" (click)="cancelLogout()">Cancel</button>
+      <button mat-flat-button color="primary" type="button" (click)="confirmLogout()">Yes, Logout</button>
+    </div>
+  </mat-card>
+</main>
