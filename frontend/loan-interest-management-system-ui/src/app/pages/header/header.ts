@@ -29,4 +29,10 @@ export class Header {
   navigateToLogin(): void {
     this.rt.navigate(['/login']);
   }
+
+  navigateToLogout(): void {
+    this.rt.navigate(['/logout'], {
+      state: { returnUrl: this.rt.url },
+    });
+  }
 }

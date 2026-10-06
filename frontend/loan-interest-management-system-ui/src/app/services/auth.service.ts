@@ -21,6 +21,8 @@ export class AuthService {
 
   clearCurrentUser(): void {
     if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('currentUser');
+      window.localStorage.removeItem('isLoggedIn');
       window.localStorage.removeItem('loanManagerCurrentUser');
       window.localStorage.removeItem('loanManagerUserName');
     }

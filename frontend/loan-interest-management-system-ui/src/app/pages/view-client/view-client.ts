@@ -14,6 +14,7 @@ export interface ClientPayment {
 
 export interface ViewClientData {
   id?: string;
+  owner?: string;
   clientName: string;
   phoneNumber: string;
   principalAmount: number;

@@ -405,19 +405,31 @@ img {
         }
       }
 
-      .footer-links {
+      .footer-contact {
         display: flex;
         flex-wrap: wrap;
-        gap: 18px;
+        align-items: center;
+        justify-content: center;
+        gap: 12px 18px;
 
         a {
-          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
           color: #4a5d7d;
+          font-size: 0.9rem;
           font-weight: 600;
+          text-decoration: none;
           transition: color 0.2s ease;
 
           &:hover {
             color: #2a56d7;
+          }
+
+          mat-icon {
+            width: 18px;
+            height: 18px;
+            font-size: 18px;
           }
         }
       }

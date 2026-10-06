@@ -70,13 +70,12 @@ export class ClientDetails implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.loadClients();
     this.authservice.currentUser$.subscribe(user => {
-      this.userName = user ? user : ''
-      this.displayedColumns = this.columnDefs
-        .filter((column) => column.key !== 'actions' || Boolean(this.userName))
-        .map((column) => column.key);
-    })
+      this.userName = user ? user : '';
+      this.updateColumns();
+      this.applyUserFilter();
+    });
+    this.loadClients();
   }
 
   ngAfterViewInit(): void {
@@ -125,21 +124,53 @@ export class ClientDetails implements OnInit, AfterViewInit {
 
     try {
       const saved = JSON.parse(window.localStorage.getItem(this.storageKey) ?? '[]');
-      this.clients = Array.isArray(saved) ? saved : [];
+      const allClients = Array.isArray(saved) ? saved : [];
       let addedIds = false;
-      for (const client of this.clients) {
+      for (const client of allClients) {
         if (!client.id) {
           client.id = this.createClientId();
           addedIds = true;
         }
       }
-      if (addedIds) window.localStorage.setItem(this.storageKey, JSON.stringify(this.clients));
+      if (addedIds) window.localStorage.setItem(this.storageKey, JSON.stringify(allClients));
+      this.clients = this.filterClientsForCurrentUser(allClients);
     } catch {
       this.clients = [];
     }
 
     this.dataSource.data = this.clients;
     this.applyFilters();
+  }
+
+  filterClientsForCurrentUser(clients: ViewClientData[]): ViewClientData[] {
+    const normalizedUserName = this.userName.trim().toLocaleLowerCase();
+    if (!normalizedUserName) {
+      return clients.filter((client) => !client.owner);
+    }
+
+    return clients.filter((client) => client.owner?.trim().toLocaleLowerCase() === normalizedUserName);
+  }
+
+  applyUserFilter(): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(this.storageKey) ?? '[]');
+      const allClients = Array.isArray(saved) ? saved : [];
+      this.clients = this.filterClientsForCurrentUser(allClients);
+      this.dataSource.data = this.clients;
+      this.applyFilters();
+    } catch {
+      this.clients = [];
+      this.dataSource.data = this.clients;
+      this.applyFilters();
+    }
+  }
+
+  updateColumns(): void {
+    this.displayedColumns = this.columnDefs
+      .filter((column) => column.key !== 'actions' || Boolean(this.userName))
+      .map((column) => column.key);
   }
 
   applyFilters(): void {

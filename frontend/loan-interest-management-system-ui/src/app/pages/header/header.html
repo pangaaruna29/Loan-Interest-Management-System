@@ -27,9 +27,22 @@
       Login
     </button>
 
-    <div *ngIf="isLoggedIn()" class="user-account" [attr.title]="userName()" aria-label="Logged in user">
-      <div class="user-avatar">{{ userInitial() }}</div>
-    </div>
+    <button
+      *ngIf="isLoggedIn()"
+      type="button"
+      class="user-account"
+      [attr.title]="userName()"
+      [attr.aria-label]="'Open user menu for ' + userName()"
+      [matMenuTriggerFor]="userMenu"
+    >
+      <span class="user-avatar">{{ userInitial() }}</span>
+    </button>
+
+    <mat-menu #userMenu="matMenu">
+      <button class="logout-btn" type="button" (click)="navigateToLogout()">
+        Logout
+      </button>
+    </mat-menu>
   </div>
 </mat-toolbar>
 

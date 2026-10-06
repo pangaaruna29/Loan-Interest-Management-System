@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MaterialModule } from '../../material/material-module';
 import { LoanInterestService, PaymentHistoryEntry } from '../../services/loan-interest.service';
 import { ViewClientData } from '../view-client/view-client';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   imports: [MaterialModule, CommonModule, ReactiveFormsModule],
@@ -23,6 +24,7 @@ export class ClientForm implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private loanInterest: LoanInterestService,
+    private authService: AuthService,
   ) {
     this.clientForm = this.fb.group({
       clientName: ['', Validators.required],
@@ -178,8 +180,10 @@ export class ClientForm implements OnInit {
         ),
       };
     } else {
+      const owner = this.authService.getCurrentUserName().trim();
       savedClients.push({
         id: this.createClientId(),
+        ...(owner ? { owner } : {}),
         ...updatedFields,
         payments: [],
         amountPaid: 0,
