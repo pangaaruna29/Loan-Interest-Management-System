@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { MaterialModule } from '../../material/material-module';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   imports: [CommonModule, ReactiveFormsModule, MaterialModule, RouterModule],
@@ -15,7 +16,7 @@ export class Signuppage {
   showPassword = false;
   showConfirmPassword = false;
 
-  constructor(private fb: FormBuilder, private router: Router) {
+  constructor(private fb: FormBuilder, private router: Router,private authService: AuthService) {
     this.signupForm = this.fb.group({
       username: ['', [Validators.required]],
       phoneNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
@@ -120,19 +121,31 @@ export class Signuppage {
       username: this.signupForm.value.username,
       phoneNumber: this.signupForm.value.phoneNumber,
       email: this.signupForm.value.email,
-      password: this.signupForm.value.password,
+      password: this.signupForm.value.confirmPassword,
     };
 
-    const users = this.getStoredUsers();
-    const alreadyExists = users.some((user: any) => user.email?.toLowerCase() === newUser.email.toLowerCase());
+    // const users = this.getStoredUsers();
+    // const alreadyExists = users.some((user: any) => user.email?.toLowerCase() === newUser.email.toLowerCase());
 
-    if (!alreadyExists) {
-      users.push(newUser);
-      localStorage.setItem('loanManagerUsers', JSON.stringify(users));
+    // if (!alreadyExists) {
+    //   users.push(newUser);
+    //   localStorage.setItem('loanManagerUsers', JSON.stringify(users));
+    // }
+
+    // localStorage.removeItem('loanManagerCurrentUser');
+    // this.router.navigate(['/login']);
+    if(newUser){
+      this.authService.createUsers(newUser).subscribe({
+        next:(res)=>{
+          console.log(res,'signup successfully')
+              this.router.navigate(['/login']);
+
+        },
+        error:(error)=>{
+          return error
+        }
+      })
     }
-
-    localStorage.removeItem('loanManagerCurrentUser');
-    this.router.navigate(['/login']);
   }
 
   getStoredUsers(): any[] {
