@@ -4,12 +4,12 @@ const bycrypt = require('bcryptjs');
 const registerUser = async (userData) => {
     const { userName, phoneNumber, email, password } = userData;
     const validateEmail = email.trim().toLowerCase();
-    const validatePassword = await bcrypt.hash(password, 6);
-    const existingUser = await user.findOne({ email: validateEmail });
+    const validatePassword = await bycrypt.hash(password, 6);
+    // const existingUser = await user.findOne({ email: validateEmail });
 
-    if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
-    }
+    // if (existingUser) {
+        // return res.status(400).json({ message: 'User already exists' });
+    // }
     const newUser = new user({
         userName,
         phoneNumber,

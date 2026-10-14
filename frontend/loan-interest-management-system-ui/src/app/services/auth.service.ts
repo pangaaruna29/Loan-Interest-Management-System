@@ -61,7 +61,7 @@ constructor(private http:HttpClient){}
   }
   createUsers(payload: any): Observable<any> {
     // https://urban-zebra-77vxpw6j6j4ghrxj4-3000.app.github.dev http://localhost:3000
-    return this.http.post('https://urban-zebra-77vxpw6j6j4ghrxj4-3000.app.github.dev/api/signup', payload).pipe(map((res) => {
+    return this.http.post('/api/signup', payload).pipe(map((res) => {
       return res
     }),
       catchError((error) => {

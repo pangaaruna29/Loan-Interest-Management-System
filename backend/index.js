@@ -6,6 +6,16 @@ const app = express();
 const mongoDB= require('./config/db');
 const authRoutes = require('./routes/authRoutes')
 const port = process.env.PORT || 3000
+app.use(express.json());
+
+//  mongoDB().then(()=>{
+//     console.log("MongoDB Connected");
+// })
+// .catch((error)=>{
+//     console.log("MongoDB Error:", error);
+// });
+
+mongoDB();
 app.use(cors());
 // app.use(cors({
 //   origin: [
@@ -15,12 +25,11 @@ app.use(cors());
 //   methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
 //   allowedHeaders: ['Content-Type', 'Authorization']
 // }));
-app.use(express.json());
 app.get('/', (req, res) => {
   res.send('Hello, World!');
 });
 app.use('/api',authRoutes);
-//  mongoDB();
+
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
