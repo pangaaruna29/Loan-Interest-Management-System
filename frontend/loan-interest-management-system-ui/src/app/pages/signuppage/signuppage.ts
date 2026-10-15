@@ -118,7 +118,7 @@ export class Signuppage {
     }
 
     const newUser = {
-      username: this.signupForm.value.username,
+      userName: this.signupForm.value.username,
       phoneNumber: this.signupForm.value.phoneNumber,
       email: this.signupForm.value.email,
       password: this.signupForm.value.confirmPassword,

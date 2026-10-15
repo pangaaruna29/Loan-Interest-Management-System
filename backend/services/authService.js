@@ -5,17 +5,17 @@ const registerUser = async (userData) => {
     const validateEmail = email.trim().toLowerCase();
      const validatePassword = await bycrypt.hash(password, 6);
     const existingUser = await user.findOne({ email: validateEmail });
-
     if (existingUser) {
         return res.status(400).json({ message: 'User already exists' });
     }
-    const newUser = new user({
-        userName,
-        phoneNumber,
+    const newUser = await user.create({
+        userName:userName,
+        phoneNumber:phoneNumber,
         email: validateEmail,
         password:validatePassword
     })
-
+console.log("Database:", newUser.db.name);
+    console.log("Collection:", newUser.collection.name);
     return {
         id: newUser._id,
         userName: newUser.userName,

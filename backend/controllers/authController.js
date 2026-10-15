@@ -1,10 +1,9 @@
 const service = require('../services/authService');
-let users = []
+const user = require('../models/users');
+
 const signup = async (req, res) => {
     try {
         const user = await service.registerUser(req.body);
-        users.push(user);
-        console.log(users, '777', req.body)
         return res.status(201).json({
             message: 'User registered successfully',
             user
@@ -17,6 +16,7 @@ const signup = async (req, res) => {
 };
 const getUsers = async (req, res) => {
     try {
+        const users = await user.find()
         return res.json(users)
     }
     catch (error) {
