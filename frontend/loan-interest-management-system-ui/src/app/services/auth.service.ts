@@ -70,4 +70,13 @@ constructor(private http:HttpClient){}
     )
 
   }
+  getUsers():Observable<any>{
+    return this.http.get('/api/users').pipe(map((res)=>{
+      return res
+    }),
+    catchError((error)=>{
+      return error
+    })
+  )
+  }
 }

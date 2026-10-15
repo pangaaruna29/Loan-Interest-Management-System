@@ -14,13 +14,25 @@ import { AuthService } from '../../services/auth.service';
 export class Loginpage {
   loginForm: FormGroup;
   loginError = '';
+  user:any;
 
-  constructor(private fb: FormBuilder, private router: Router, private authService: AuthService) {
+  constructor(
+     private fb: FormBuilder,
+     private router: Router,
+     private authService: AuthService) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       rememberMe: [false, Validators.requiredTrue],
     });
+  }
+  ngOnInit(){
+this.authService.getUsers().subscribe(res=>{
+  if(res){
+    this.user= res
+    console.log(res,'30 loginnn')
+  }
+})
   }
 
   emailControl() {
@@ -65,7 +77,8 @@ export class Loginpage {
 
     const email = (this.loginForm.value.email || '').trim().toLowerCase();
     const password = this.loginForm.value.password || '';
-    const savedUsers = this.getStoredUsers();
+    // const savedUsers = this.getStoredUsers();( this one will remove )
+    const savedUsers =this.user
     const matchedUser = savedUsers.find((user: any) => user.email?.toLowerCase() === email);
 
     if (!matchedUser) {
