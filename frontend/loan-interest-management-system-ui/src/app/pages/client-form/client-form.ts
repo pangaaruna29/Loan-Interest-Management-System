@@ -180,7 +180,10 @@ export class ClientForm implements OnInit {
         ),
       };
     } else {
-      const owner = this.authService.getCurrentUserName().trim();
+      let owner;
+       this.authService.currentUser$.subscribe(res=>{
+     owner = res.trim()
+      });
       savedClients.push({
         id: this.createClientId(),
         ...(owner ? { owner } : {}),

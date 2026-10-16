@@ -27,7 +27,7 @@ const getUsers = async (req, res) => {
 }
 const login = async (req, res) => {
     try {
-        const user = req.body;
+        const user = await service.loginUser(req.body);
         return res.status(201).json({
             message: 'User logined successfully',
             user

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MaterialModule } from '../../material/material-module';
 import { Router, RouterModule } from '@angular/router';
@@ -13,13 +13,14 @@ import { AuthService } from '../../services/auth.service';
 })
 export class Loginpage {
   loginForm: FormGroup;
-  loginError = '';
+  loginError:string='';
   user:any;
 
   constructor(
      private fb: FormBuilder,
      private router: Router,
-     private authService: AuthService) {
+     private authService: AuthService,
+    private cdr:ChangeDetectorRef) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
@@ -27,6 +28,8 @@ export class Loginpage {
     });
   }
   ngOnInit(){
+      // this.cdr.detectChanges();
+
 this.authService.getUsers().subscribe(res=>{
   if(res){
     this.user= res
@@ -77,39 +80,24 @@ this.authService.getUsers().subscribe(res=>{
 
     const email = (this.loginForm.value.email || '').trim().toLowerCase();
     const password = this.loginForm.value.password || '';
-    // const savedUsers = this.getStoredUsers();( this one will remove )
-    const savedUsers =this.user
-    const matchedUser = savedUsers.find((user: any) => user.email?.toLowerCase() === email);
-
-    if (!matchedUser) {
-      this.loginError = 'User not found. Please create an account.';
-      return;
+    const payload = {
+      email: email,
+      password: password
     }
-
-    if (matchedUser.password !== password) {
-      this.loginError = 'Incorrect password. Please try again.';
-      return;
-    }
-
-    this.authService.setCurrentUser(matchedUser);
-    this.router.navigate(['']);
-  }
-
-  getStoredUsers(): any[] {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return [];
-    }
-
-    const savedUsers = window.localStorage.getItem('loanManagerUsers');
-    if (!savedUsers) {
-      return [];
-    }
-
-    try {
-      const parsedUsers = JSON.parse(savedUsers);
-      return Array.isArray(parsedUsers) ? parsedUsers : [];
-    } catch {
-      return [];
-    }
+    let matchedUser;
+    this.authService.loginUsers(payload).subscribe({
+      next: (res => {
+        if (res.user) {
+          matchedUser = res?.user?.users.userName
+          this.authService.setCurrentUser(matchedUser);
+          this.router.navigate(['']);
+        }
+      }),
+      error: (err => {
+        this.loginError = err?.error.message || 'login not successfull'
+         this.cdr.markForCheck();
+      })
+    })
+    // this.cdr.markForCheck()
   }
 }

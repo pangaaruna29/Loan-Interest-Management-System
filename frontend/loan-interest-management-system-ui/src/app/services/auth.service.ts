@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, map, Observable } from 'rxjs';
+import { BehaviorSubject, catchError, map, Observable, throwError } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 export interface user {
 
@@ -9,56 +9,24 @@ export interface user {
 })
 export class AuthService {
 
-  private currentUserSubject = new BehaviorSubject<string>(this.getStoredUserName());
+  private currentUserSubject = new BehaviorSubject<string>('');
   currentUser$ = this.currentUserSubject.asObservable();
-constructor(private http:HttpClient){}
+  constructor(private http: HttpClient) { }
   setCurrentUser(user: any): void {
-    const userName = user?.username || user?.email || 'User';
-
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('loanManagerCurrentUser', JSON.stringify(user));
-      window.localStorage.setItem('loanManagerUserName', userName);
-    }
-
-    this.currentUserSubject.next(userName);
+    this.currentUserSubject.next(user);
   }
 
   clearCurrentUser(): void {
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem('currentUser');
       window.localStorage.removeItem('isLoggedIn');
-      window.localStorage.removeItem('loanManagerCurrentUser');
-      window.localStorage.removeItem('loanManagerUserName');
+      // window.localStorage.removeItem('loanManagerCurrentUser');
+      // window.localStorage.removeItem('loanManagerUserName');
     }
 
     this.currentUserSubject.next('');
   }
 
-  getCurrentUserName(): string {
-    return this.getStoredUserName();
-  }
-
-  private getStoredUserName(): string {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return '';
-    }
-
-    const currentUser = window.localStorage.getItem('loanManagerCurrentUser');
-    if (currentUser) {
-      try {
-        const parsedUser = JSON.parse(currentUser);
-        const storedName = parsedUser?.username || parsedUser?.email || '';
-        if (storedName) {
-          return storedName;
-        }
-      } catch {
-        // ignore malformed storage value
-      }
-    }
-
-    const fallbackValue = window.localStorage.getItem('loanManagerUserName') || '';
-    return fallbackValue;
-  }
   createUsers(payload: any): Observable<any> {
     // https://urban-zebra-77vxpw6j6j4ghrxj4-3000.app.github.dev http://localhost:3000
     return this.http.post('/api/signup', payload).pipe(map((res) => {
@@ -70,13 +38,22 @@ constructor(private http:HttpClient){}
     )
 
   }
-  getUsers():Observable<any>{
-    return this.http.get('/api/users').pipe(map((res)=>{
+  getUsers(): Observable<any> {
+    return this.http.get('/api/users').pipe(map((res) => {
       return res
     }),
-    catchError((error)=>{
-      return error
-    })
-  )
+      catchError((error) => {
+        return error
+      })
+    )
+  }
+  loginUsers(payload: any): Observable<any> {
+    return this.http.post('/api/login', payload).pipe(map((res) => {
+      return res
+    }),
+      catchError((error) => {
+        return throwError(() => error)
+      })
+    )
   }
 }

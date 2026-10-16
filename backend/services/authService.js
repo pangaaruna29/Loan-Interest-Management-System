@@ -3,19 +3,17 @@ const bycrypt = require('bcryptjs');
 const registerUser = async (userData) => {
     const { userName, phoneNumber, email, password } = userData;
     const validateEmail = email.trim().toLowerCase();
-     const validatePassword = await bycrypt.hash(password, 6);
+    const validatePassword = await bycrypt.hash(password, 6);
     const existingUser = await user.findOne({ email: validateEmail });
     if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
+        throw new Error({ message: 'User already exists' });
     }
     const newUser = await user.create({
-        userName:userName,
-        phoneNumber:phoneNumber,
+        userName: userName,
+        phoneNumber: phoneNumber,
         email: validateEmail,
-        password:validatePassword
+        password: validatePassword
     })
-console.log("Database:", newUser.db.name);
-    console.log("Collection:", newUser.collection.name);
     return {
         id: newUser._id,
         userName: newUser.userName,
@@ -26,14 +24,25 @@ console.log("Database:", newUser.db.name);
 
 }
 
-const loginUser = async (loginedUser)=>{
-const {email,password} = loginedUser;
-const validateEmail = email.trim().toLowerCase();
-const validatePassword = await bycrypt.compare(password, 6);
-return {
-    email: validateEmail,
-    password:validatePassword  
-}
+const loginUser = async (loginedUser) => {
+    const { email, password } = loginedUser;
+    const validateEmail = email.trim().toLowerCase();
+    const users = await user.findOne({ email: validateEmail })
+    if (!users) {
+        const error = new Error("User not found");
+        error.status = 404
+        throw error
+    }
+    const validatePassword = await bycrypt.compare(password, users.password);
+    if (!validatePassword) {
+        //   throw new Error( "Invalid password");
+        const error = new Error("Invalid password");
+        error.status = 401
+        throw error
+    }
+    return {
+        users
+    }
 }
 
 module.exports = { registerUser, loginUser }
