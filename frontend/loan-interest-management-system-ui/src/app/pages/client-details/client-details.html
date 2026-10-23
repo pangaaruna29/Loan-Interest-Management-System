@@ -18,10 +18,16 @@
 		</section>
 
 		<section class="clients-section" aria-labelledby="clients-title">
+			<div class="clients-error" role="alert" *ngIf="clientsError">
+				<span>{{ clientsError }}</span>
+				<button mat-button type="button" (click)="loadClients()">Retry</button>
+			</div>
+			<p *ngIf="clientsLoading">Loading clients...</p>
 			<div class="section-heading">
 				<div>
 					<h2 id="clients-title">Registered clients</h2>
 					<p>{{ clients.length }} {{ clients.length === 1 ? 'client' : 'clients' }} in your portfolio</p>
+					<p *ngIf="!isLoggedIn && clients.length > 0">Example data only. Log in to view and manage your own clients.</p>
 				</div>
 			</div>
 
@@ -56,7 +62,7 @@
 				<button mat-button type="button" class="clear-filters" (click)="clearFilters()">Clear filters</button>
 			</div>
 
-			<div class="empty-state" *ngIf="clients.length === 0">
+			<div class="empty-state" *ngIf="clients.length === 0 && !clientsLoading && !clientsError">
 				<div class="empty-icon"><mat-icon>groups</mat-icon></div>
 				<h2>No clients found</h2>
 				<p>Start by registering your first client.</p>
@@ -126,5 +132,5 @@
 		</section>
 	</div>
 	<app-view-client *ngIf="selectedClient" [client]="selectedClient" (close)="closeClientView()"></app-view-client>
-	<app-payment-option *ngIf="selectedPaymentClient" [client]="selectedPaymentClient" [clientIndex]="selectedPaymentClientIndex" (paymentSaved)="onPaymentSaved($event)" (closePopup)="closePaymentPopup()"></app-payment-option>
+	<app-payment-option *ngIf="selectedPaymentClient" [client]="selectedPaymentClient" (paymentSaved)="onPaymentSaved($event)" (closePopup)="closePaymentPopup()"></app-payment-option>
 </main>

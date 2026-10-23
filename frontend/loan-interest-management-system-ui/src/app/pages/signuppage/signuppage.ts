@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { MaterialModule } from '../../material/material-module';
@@ -15,8 +15,14 @@ export class Signuppage {
   signupForm: FormGroup;
   showPassword = false;
   showConfirmPassword = false;
+  signupError: string  = '';
+  isSubmitting = false;
 
-  constructor(private fb: FormBuilder, private router: Router,private authService: AuthService) {
+  constructor(
+     private fb: FormBuilder,
+     private router: Router,
+     private authService: AuthService,
+     private cdr: ChangeDetectorRef) {
     this.signupForm = this.fb.group({
       username: ['', [Validators.required]],
       phoneNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
@@ -112,57 +118,29 @@ export class Signuppage {
   }
 
   onSubmit(): void {
-    if (this.signupForm.invalid) {
+        this.signupError = '';
+
+    if (this.signupForm.invalid || this.isSubmitting) {
       this.signupForm.markAllAsTouched();
       return;
     }
 
     const newUser = {
-      userName: this.signupForm.value.username,
-      phoneNumber: this.signupForm.value.phoneNumber,
-      email: this.signupForm.value.email,
-      password: this.signupForm.value.confirmPassword,
+      userName: String(this.signupForm.value.username).trim(),
+      phoneNumber: String(this.signupForm.value.phoneNumber).trim(),
+      email: String(this.signupForm.value.email).trim().toLowerCase(),
+      password: String(this.signupForm.value.password),
     };
 
-    // const users = this.getStoredUsers();
-    // const alreadyExists = users.some((user: any) => user.email?.toLowerCase() === newUser.email.toLowerCase());
-
-    // if (!alreadyExists) {
-    //   users.push(newUser);
-    //   localStorage.setItem('loanManagerUsers', JSON.stringify(users));
-    // }
-
-    // localStorage.removeItem('loanManagerCurrentUser');
-    // this.router.navigate(['/login']);
-    if(newUser){
-      this.authService.createUsers(newUser).subscribe({
-        next:(res)=>{
-          console.log(res,'signup successfully')
-              this.router.navigate(['/login']);
-
-        },
-        error:(error)=>{
-          return error
-        }
-      })
-    }
-  }
-
-  getStoredUsers(): any[] {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return [];
-    }
-
-    const savedUsers = window.localStorage.getItem('loanManagerUsers');
-    if (!savedUsers) {
-      return [];
-    }
-
-    try {
-      const parsedUsers = JSON.parse(savedUsers);
-      return Array.isArray(parsedUsers) ? parsedUsers : [];
-    } catch {
-      return [];
-    }
+    this.isSubmitting = true;
+    this.authService.createUsers(newUser).subscribe({
+      next: () => this.router.navigate(['/login']),
+      error: (error) => {
+        console.log('Error creating user:', error);
+        this.signupError = error?.error?.message || 'Unable to create account. Please try again.';
+        this.isSubmitting = false;
+         this.cdr.markForCheck();
+      }
+    });
   }
 }

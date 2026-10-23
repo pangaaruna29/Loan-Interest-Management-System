@@ -1,21 +1,37 @@
 const express = require('express');
 const cors = require('cors')
 const dotenv = require("dotenv");
-dotenv.config();
+const path = require('node:path');
+dotenv.config({
+  path: [
+    path.join(__dirname, '.env.local'),
+    path.join(__dirname, '.env')
+  ]
+});
 const app = express();
 const mongoDB= require('./config/db');
 const authRoutes = require('./routes/authRoutes')
+const clientRoutes = require('./routes/clientRoutes')
 const port = process.env.PORT || 3000
 app.use(express.json());
 
-mongoDB();
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_ORIGIN || 'http://localhost:4200',
+  credentials: true
+}));
 
 app.get('/', (req, res) => {
   res.send('Hello, World!');
 });
 app.use('/api',authRoutes);
+app.use('/api/clients', clientRoutes);
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-});
+if (require.main === module) {
+  mongoDB().then(() => {
+    app.listen(port, () => {
+      console.log(`Server is running on http://localhost:${port}`);
+    });
+  });
+}
+
+module.exports = app;

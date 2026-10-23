@@ -3,9 +3,10 @@
     <div class="logout-icon"><mat-icon>logout</mat-icon></div>
     <h1>Are you sure you want to logout?</h1>
     <p>Your current session will be removed, but your registered users and client details will remain.</p>
+    <p role="alert" *ngIf="logoutError">{{ logoutError }}</p>
     <div class="logout-actions">
-      <button mat-stroked-button type="button" (click)="cancelLogout()">Cancel</button>
-      <button mat-flat-button color="primary" type="button" (click)="confirmLogout()">Yes, Logout</button>
+      <button mat-stroked-button type="button" (click)="cancelLogout()" [disabled]="isLoggingOut">Cancel</button>
+      <button mat-flat-button color="primary" type="button" (click)="confirmLogout()" [disabled]="isLoggingOut">{{ isLoggingOut ? 'Logging out...' : 'Yes, Logout' }}</button>
     </div>
   </mat-card>
 </main>

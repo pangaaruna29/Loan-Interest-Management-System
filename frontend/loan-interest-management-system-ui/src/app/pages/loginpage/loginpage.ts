@@ -27,16 +27,6 @@ export class Loginpage {
       rememberMe: [false, Validators.requiredTrue],
     });
   }
-  ngOnInit(){
-      // this.cdr.detectChanges();
-
-this.authService.getUsers().subscribe(res=>{
-  if(res){
-    this.user= res
-    console.log(res,'30 loginnn')
-  }
-})
-  }
 
   emailControl() {
     return this.loginForm.get('email');
@@ -84,20 +74,15 @@ this.authService.getUsers().subscribe(res=>{
       email: email,
       password: password
     }
-    let matchedUser;
     this.authService.loginUsers(payload).subscribe({
-      next: (res => {
-        if (res.user) {
-          matchedUser = res?.user?.users.userName
-          this.authService.setCurrentUser(matchedUser);
-          this.router.navigate(['']);
-        }
-      }),
-      error: (err => {
-        this.loginError = err?.error.message || 'login not successfull'
-         this.cdr.markForCheck();
-      })
+      next: (response) => {
+        this.authService.setSession(response);
+        this.router.navigate(['/clientDetails']);
+      },
+      error: (error) => {
+        this.loginError = error?.error?.message || 'Unable to sign in. Please try again.';
+        this.cdr.markForCheck();
+      }
     })
-    // this.cdr.markForCheck()
   }
 }

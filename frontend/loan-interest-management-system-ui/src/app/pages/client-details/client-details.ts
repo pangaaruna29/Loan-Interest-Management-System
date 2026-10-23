@@ -1,6 +1,6 @@
-import { AfterViewInit, Component, input, OnInit, ViewChild } from '@angular/core';
-import { MaterialModule } from '../../material/material-module';
+import { ChangeDetectorRef, Component, OnInit, PLATFORM_ID, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MaterialModule } from '../../material/material-module';
 import { FormsModule } from '@angular/forms';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
@@ -10,6 +10,7 @@ import { LoanInterestService } from '../../services/loan-interest.service';
 import { ViewClient, ViewClientData } from '../view-client/view-client';
 import { PaymentOption } from '../payment-option/payment-option';
 import { AuthService } from '../../services/auth.service';
+import { ClientService } from '../../services/client.service';
 
 interface ClientColumn {
   key: string;
@@ -22,7 +23,53 @@ interface ClientColumn {
   styleUrl: './client-details.scss',
   templateUrl: './client-details.html',
 })
-export class ClientDetails implements OnInit, AfterViewInit {
+export class ClientDetails implements OnInit {
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly demoClients: ViewClientData[] = [
+    {
+      id: 'demo-client-1',
+      clientName: 'client1',
+      phoneNumber: '0000000001',
+      principalAmount: 50000,
+      interestRate: 2,
+      interestType: 'Simple Interest',
+      interestFrequency: 'Monthly',
+      startDate: '2025-01-01',
+      dueDate: '2099-12-31',
+      paymentStatus: 'Pending',
+      amountPaid: 0,
+      payments: [],
+    },
+    {
+      id: 'demo-client-2',
+      clientName: 'client2',
+      phoneNumber: '0000000002',
+      principalAmount: 25000,
+      interestRate: 1.5,
+      interestType: 'Simple Interest',
+      interestFrequency: 'Monthly',
+      startDate: '2025-03-01',
+      dueDate: '2099-12-31',
+      paymentStatus: 'Partially Paid',
+      amountPaid: 5000,
+      payments: [],
+    },
+    {
+      id: 'demo-client-3',
+      clientName: 'client3',
+      phoneNumber: '0000000003',
+      principalAmount: 10000,
+      interestRate: 2,
+      interestType: 'Compound Interest',
+      interestFrequency: 'Monthly',
+      startDate: '2025-02-01',
+      dueDate: '2025-06-30',
+      paymentStatus: 'Overdue',
+      amountPaid: 0,
+      payments: [],
+    },
+  ];
+
    columnDefs: ClientColumn[] = [
     { key: 'clientName', label: 'Client Name' },
     { key: 'phoneNumber', label: 'Phone Number' },
@@ -36,7 +83,8 @@ export class ClientDetails implements OnInit, AfterViewInit {
   ];
   displayedColumns = this.columnDefs.filter((column) => column.key !== 'actions').map((column) => column.key);
    dataSource = new MatTableDataSource<ViewClientData>([]);
-   storageKey = 'loanManagerClientDetails';
+    clientsLoading = true;
+    clientsError = '';
    statusOptions = ['All', 'Pending', 'Partially Paid', 'Paid', 'Overdue'];
    interestTypeOptions = ['All', 'Simple Interest', 'Compound Interest'];
    frequencyOptions = ['All', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
@@ -44,21 +92,30 @@ export class ClientDetails implements OnInit, AfterViewInit {
   clients: ViewClientData[] = [];
   selectedClient: ViewClientData | null = null;
   selectedPaymentClient: ViewClientData | null = null;
-  selectedPaymentClientIndex: number | null = null;
   searchTerm = '';
   selectedStatus = 'All';
   selectedInterestType = 'All';
   selectedFrequency = 'All';
   today = new Date();
   userName:string='';
+  isLoggedIn = false;
 
-  @ViewChild(MatSort) sort!: MatSort;
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort)
+  set matSort(sort: MatSort | undefined) {
+    if (sort) this.dataSource.sort = sort;
+  }
+
+  @ViewChild(MatPaginator)
+  set matPaginator(paginator: MatPaginator | undefined) {
+    if (paginator) this.dataSource.paginator = paginator;
+  }
 
   constructor(
     private  router: Router,
     private  loanInterest: LoanInterestService,
-    private authservice: AuthService
+    private authservice: AuthService,
+    private clientService: ClientService,
+    private cdr: ChangeDetectorRef,
   ) {
     this.dataSource.filterPredicate = (client, filter) => this.matchesFilters(client, JSON.parse(filter));
     this.dataSource.sortingDataAccessor = (client, property) => {
@@ -70,17 +127,63 @@ export class ClientDetails implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.authservice.currentUser$.subscribe(user => {
-      this.userName = user ? user : '';
-      this.updateColumns();
-      this.applyUserFilter();
+    this.authservice.restoreSession().subscribe({
+      next: (user) => {
+        this.userName = user?.userName ?? '';
+        this.isLoggedIn = Boolean(user);
+        this.updateColumns();
+        if (this.isLoggedIn) {
+          this.loadClients();
+          return;
+        }
+        this.showDemoClients();
+      },
+      error: (error) => {
+        this.clientsError = error?.error?.message || 'Unable to verify your session. Please try again.';
+        this.clientsLoading = false;
+        this.cdr.markForCheck();
+      }
     });
-    this.loadClients();
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort;
-    this.dataSource.paginator = this.paginator;
+  private showDemoClients(): void {
+    this.clients = this.demoClients.map((client) => ({ ...client, payments: [] }));
+    this.dataSource.data = this.clients;
+    this.applyFilters();
+    this.clientsLoading = false;
+    this.clientsError = '';
+    this.cdr.markForCheck();
+  }
+
+  loadClients(): void {
+    if (!this.isLoggedIn) {
+      this.showDemoClients();
+      return;
+    }
+    this.clientsLoading = true;
+    this.clientsError = '';
+    this.clientService.getClients().subscribe({
+      next: (clients) => {
+        this.clients = clients;
+        this.dataSource.data = clients;
+        this.applyFilters();
+        this.clientsLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        this.clients = [];
+        this.dataSource.data = [];
+        this.clientsError = error?.error?.message || 'Unable to load clients. Please try again.';
+        this.clientsLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  updateColumns(): void {
+    this.displayedColumns = this.columnDefs
+      .filter((column) => column.key !== 'actions' || this.isLoggedIn)
+      .map((column) => column.key);
   }
 
   totalPrincipal(): number {
@@ -95,7 +198,7 @@ export class ClientDetails implements OnInit, AfterViewInit {
     return this.clients.reduce((total, client) => total + this.toNumber(client.amountPaid), 0);
   }
 
-   totalOutstanding(): number {
+  totalOutstanding(): number {
     return this.clients.reduce((total, client) => total + this.getOutstanding(client), 0);
   }
 
@@ -119,60 +222,6 @@ export class ClientDetails implements OnInit, AfterViewInit {
     ];
   }
 
-  loadClients(): void {
-    if (typeof window === 'undefined') return;
-
-    try {
-      const saved = JSON.parse(window.localStorage.getItem(this.storageKey) ?? '[]');
-      const allClients = Array.isArray(saved) ? saved : [];
-      let addedIds = false;
-      for (const client of allClients) {
-        if (!client.id) {
-          client.id = this.createClientId();
-          addedIds = true;
-        }
-      }
-      if (addedIds) window.localStorage.setItem(this.storageKey, JSON.stringify(allClients));
-      this.clients = this.filterClientsForCurrentUser(allClients);
-    } catch {
-      this.clients = [];
-    }
-
-    this.dataSource.data = this.clients;
-    this.applyFilters();
-  }
-
-  filterClientsForCurrentUser(clients: ViewClientData[]): ViewClientData[] {
-    const normalizedUserName = this.userName.trim().toLocaleLowerCase();
-    if (!normalizedUserName) {
-      return clients.filter((client) => !client.owner);
-    }
-
-    return clients.filter((client) => client.owner?.trim().toLocaleLowerCase() === normalizedUserName);
-  }
-
-  applyUserFilter(): void {
-    if (typeof window === 'undefined') return;
-
-    try {
-      const saved = JSON.parse(window.localStorage.getItem(this.storageKey) ?? '[]');
-      const allClients = Array.isArray(saved) ? saved : [];
-      this.clients = this.filterClientsForCurrentUser(allClients);
-      this.dataSource.data = this.clients;
-      this.applyFilters();
-    } catch {
-      this.clients = [];
-      this.dataSource.data = this.clients;
-      this.applyFilters();
-    }
-  }
-
-  updateColumns(): void {
-    this.displayedColumns = this.columnDefs
-      .filter((column) => column.key !== 'actions' || Boolean(this.userName))
-      .map((column) => column.key);
-  }
-
   applyFilters(): void {
     this.dataSource.filter = JSON.stringify({
       search: this.searchTerm.trim().toLocaleLowerCase(),
@@ -192,7 +241,19 @@ export class ClientDetails implements OnInit, AfterViewInit {
   }
 
   viewClient(client: ViewClientData): void {
-    this.selectedClient = this.selectedClient === client ? null : client;
+    if (!this.isLoggedIn) return;
+    const id = this.clientId(client);
+    if (!id) return;
+    this.clientService.getClient(id).subscribe({
+      next: (record) => {
+        this.selectedClient = record;
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        this.clientsError = error?.error?.message || 'Unable to load client details.';
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   closeClientView(): void {
@@ -200,28 +261,46 @@ export class ClientDetails implements OnInit, AfterViewInit {
   }
 
   editClient(client: ViewClientData): void {
-    if (!client.id) {
-      client.id = this.createClientId();
-      window.localStorage.setItem(this.storageKey, JSON.stringify(this.clients));
-    }
-    this.router.navigate(['/clients/edit', client.id]);
+    if (!this.isLoggedIn) return;
+    const id = this.clientId(client);
+    if (id) this.router.navigate(['/clients/edit', id]);
+  }
+
+  deleteClient(client: ViewClientData): void {
+    if (!this.isLoggedIn) return;
+    const id = this.clientId(client);
+    if (!id || (typeof window !== 'undefined' && !window.confirm(`Delete ${client.clientName}?`))) return;
+    this.clientService.deleteClient(id).subscribe({
+      next: () => this.loadClients(),
+      error: (error) => {
+        this.clientsError = error?.error?.message || 'Unable to delete client.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private clientId(client: ViewClientData): string | undefined {
+    const mongoId = client['_id'];
+    return client.id ?? (typeof mongoId === 'string' ? mongoId : undefined);
   }
 
   recordPayment(client: ViewClientData): void {
+    if (!this.isLoggedIn) return;
     this.selectedPaymentClient = client;
-    this.selectedPaymentClientIndex = this.clients.indexOf(client);
   }
 
   closePaymentPopup(): void {
     this.selectedPaymentClient = null;
-    this.selectedPaymentClientIndex = null;
   }
 
   onPaymentSaved(updatedClient: ViewClientData): void {
-    const index = this.clients.findIndex((client) => client.phoneNumber === updatedClient.phoneNumber && client.clientName === updatedClient.clientName);
-    if (index >= 0) this.clients[index] = updatedClient;
+    const id = this.clientId(updatedClient);
+    const index = this.clients.findIndex((client) => this.clientId(client) === id);
+    if (index < 0) return;
+    this.clients[index] = updatedClient;
     this.dataSource.data = [...this.clients];
     this.applyFilters();
+    this.cdr.markForCheck();
   }
 
   getStatus(client: ViewClientData): string {
@@ -299,9 +378,4 @@ export class ClientDetails implements OnInit, AfterViewInit {
     return Number.isFinite(number) ? number : 0;
   }
 
-   createClientId(): string {
-    return typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  }
 }

@@ -62,9 +62,10 @@
       </mat-form-field>
 
       <button mat-flat-button color="primary" class="signup-button" type="submit"
-        [disabled]="signupForm.invalid || signupForm?.get('password')?.value !== signupForm?.get('confirmPassword')?.value">
-        Create Account
+        [disabled]="signupForm.invalid || isSubmitting || signupForm?.get('password')?.value !== signupForm?.get('confirmPassword')?.value">
+        {{ isSubmitting ? 'Creating Account...' : 'Create Account' }}
       </button>
+      <p *ngIf="signupError" class="signup-error" role="alert">{{ signupError }}</p>
 
       <div class="login-link-row">
         <span>Already have an account?</span>

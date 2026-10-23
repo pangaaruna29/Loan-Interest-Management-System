@@ -117,7 +117,12 @@
     }
   }
 }
-
+.signup-error {
+  margin: 4px 0 0;
+  color: #a32121;
+  font-size: 0.9rem;
+  text-align: center;
+}
 @media (max-width: 600px) {
   .signup-shell {
     min-height: calc(100vh - 72px);

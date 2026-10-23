@@ -13,6 +13,7 @@
 		</header>
 
 		<form [formGroup]="paymentForm" (ngSubmit)="savePayment()">
+			<p class="save-error" role="alert" *ngIf="saveError">{{ saveError }}</p>
 			<div class="modal-content">
 				<section class="payment-section">
 					<div class="section-title"><span class="section-mark client-mark"><mat-icon>person</mat-icon></span>
@@ -124,7 +125,7 @@
 
 			<footer class="modal-footer">
 				<button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
-				<button mat-flat-button type="submit" class="save-button"><mat-icon>save</mat-icon>Save Payment</button>
+				<button mat-flat-button type="submit" class="save-button" [disabled]="isSaving"><mat-icon>save</mat-icon>{{ isSaving ? 'Saving...' : 'Save Payment' }}</button>
 			</footer>
 		</form>
 	</section>

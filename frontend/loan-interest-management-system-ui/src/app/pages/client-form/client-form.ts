@@ -1,11 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MaterialModule } from '../../material/material-module';
 import { LoanInterestService, PaymentHistoryEntry } from '../../services/loan-interest.service';
 import { ViewClientData } from '../view-client/view-client';
-import { AuthService } from '../../services/auth.service';
+import { ClientService } from '../../services/client.service';
 
 @Component({
   imports: [MaterialModule, CommonModule, ReactiveFormsModule],
@@ -14,17 +14,21 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './client-form.html',
 })
 export class ClientForm implements OnInit {
+  private readonly platformId = inject(PLATFORM_ID);
+
   clientForm: FormGroup;
-    storageKey = 'loanManagerClientDetails';
   isEditMode = false;
   selectedClient: ViewClientData | null = null;
+  isLoadingClient = false;
+  isSaving = false;
+  formError = '';
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
     private loanInterest: LoanInterestService,
-    private authService: AuthService,
+    private clientService: ClientService,
   ) {
     this.clientForm = this.fb.group({
       clientName: ['', Validators.required],
@@ -41,24 +45,29 @@ export class ClientForm implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    if (!id) return;
+    if (!id || !isPlatformBrowser(this.platformId)) return;
 
     this.isEditMode = true;
-    this.selectedClient = this.getSavedClients().find((client) => client.id === id) ?? null;
-    if (!this.selectedClient) {
-      this.router.navigate(['/clientDetails']);
-      return;
-    }
-
-    this.clientForm.patchValue({
-      clientName: this.selectedClient.clientName,
-      phoneNumber: this.selectedClient.phoneNumber,
-      principalAmount: this.selectedClient.principalAmount,
-      interestRate: this.selectedClient.interestRate,
-      interestType: this.selectedClient.interestType ?? 'Simple Interest',
-      interestFrequency: this.selectedClient.interestFrequency,
-      startDate: this.parseDateValue(this.selectedClient.startDate),
-      dueDate: this.parseDateValue(this.selectedClient.dueDate),
+    this.isLoadingClient = true;
+    this.clientService.getClient(id).subscribe({
+      next: (client) => {
+        this.selectedClient = client;
+        this.clientForm.patchValue({
+          clientName: client.clientName,
+          phoneNumber: client.phoneNumber,
+          principalAmount: client.principalAmount,
+          interestRate: client.interestRate,
+          interestType: client.interestType ?? 'Simple Interest',
+          interestFrequency: client.interestFrequency,
+          startDate: this.parseDateValue(client.startDate),
+          dueDate: this.parseDateValue(client.dueDate),
+        });
+        this.isLoadingClient = false;
+      },
+      error: (error) => {
+        this.formError = error?.error?.message || 'Unable to load client. Please try again.';
+        this.isLoadingClient = false;
+      }
     });
   }
 
@@ -121,10 +130,11 @@ export class ClientForm implements OnInit {
   }
 
   saveClient(): void {
-    if (this.clientForm.invalid) {
+    if (this.clientForm.invalid || this.isSaving || this.isLoadingClient) {
       this.clientForm.markAllAsTouched();
       return;
     }
+    this.formError = '';
 
     const formValue = this.clientForm.value;
     const updatedFields = {
@@ -138,18 +148,16 @@ export class ClientForm implements OnInit {
       dueDate: this.formatDateValue(formValue.dueDate),
     };
 
-    const savedClients = this.getSavedClients();
     if (this.isEditMode) {
-      const index = savedClients.findIndex((client) => client.id === this.selectedClient?.id);
-      if (index < 0) {
-        this.router.navigate(['/clientDetails']);
+      const id = this.route.snapshot.paramMap.get('id');
+      if (!id || !this.selectedClient) {
+        this.formError = 'Unable to find the client to update.';
         return;
       }
 
-      const existingClient = savedClients[index];
-      const payments = existingClient.payments ?? [];
+      const payments = this.selectedClient.payments ?? [];
       const recordedPayments = payments.reduce((total, payment) => total + this.toNumber(payment.paymentAmount), 0);
-      const legacyAmountPaid = Math.max(0, this.toNumber(existingClient.amountPaid) - recordedPayments);
+      const legacyAmountPaid = Math.max(0, this.toNumber(this.selectedClient.amountPaid) - recordedPayments);
       const interest = this.loanInterest.calculateInterest({
         principal: updatedFields.principalAmount,
         rate: updatedFields.interestRate,
@@ -169,69 +177,49 @@ export class ClientForm implements OnInit {
         legacyAmountPaid,
       );
 
-      savedClients[index] = {
-        ...existingClient,
-        ...updatedFields,
-        paymentStatus: this.loanInterest.calculatePaymentStatus(
+      const paymentStatus = this.loanInterest.calculatePaymentStatus(
           allocation.outstanding,
           updatedFields.dueDate,
           new Date(),
           allocation.totalPaid,
-        ),
-      };
-    } else {
-      let owner;
-       this.authService.currentUser$.subscribe(res=>{
-     owner = res.trim()
+        );
+      this.isSaving = true;
+      this.clientService.updateClient(id, { ...updatedFields, paymentStatus }).subscribe({
+        next: () => this.router.navigate(['/clientDetails']),
+        error: (error) => {
+          this.formError = error?.error?.message || 'Unable to update client. Please try again.';
+          this.isSaving = false;
+        }
       });
-      savedClients.push({
-        id: this.createClientId(),
-        ...(owner ? { owner } : {}),
+    } else {
+      this.isSaving = true;
+      this.clientService.createClient({
         ...updatedFields,
         payments: [],
         amountPaid: 0,
         paymentStatus: 'Pending',
+      }).subscribe({
+        next: () => this.router.navigate(['/clientDetails']),
+        error: (error) => {
+          this.formError = error?.error?.message || 'Unable to save client. Please try again.';
+          this.isSaving = false;
+        }
       });
-    }
-    window.localStorage.setItem(this.storageKey, JSON.stringify(savedClients));
-
-    this.router.navigate(['/clientDetails']);
-  }
-
-
-   getSavedClients(): ViewClientData[] {
-    if (typeof window === 'undefined') {
-      return [];
-    }
-
-    const saved = window.localStorage.getItem(this.storageKey);
-
-    if (!saved) {
-      return [];
-    }
-
-    try {
-      const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed as ViewClientData[] : [];
-    } catch {
-      return [];
     }
   }
 
    formatDateValue(value: Date | string): string {
-    const date = new Date(value);
-    return date.toISOString().split('T')[0];
+    const date = value instanceof Date ? value : this.parseDateValue(value);
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
    parseDateValue(value: string): Date | null {
-    const date = new Date(`${value}T00:00:00`);
+    const date = new Date(`${value.slice(0, 10)}T00:00:00`);
     return Number.isNaN(date.getTime()) ? null : date;
-  }
-
-   createClientId(): string {
-    return typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   }
 
    toNumber(value: unknown): number {

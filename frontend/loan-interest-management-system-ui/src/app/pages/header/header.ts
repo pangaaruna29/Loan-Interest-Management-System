@@ -21,7 +21,7 @@ export class Header {
   private authService = inject(AuthService);
   private currentUser = toSignal(this.authService.currentUser$);
   
-  userName = computed(() => this.currentUser()?.trim() ?? '');
+  userName = computed(() => this.currentUser()?.userName ?? '');
   isLoggedIn = computed(() => !!this.userName());
   userInitial = computed(() => this.userName().charAt(0).toUpperCase() || 'U');
 

@@ -1,59 +1,93 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, map, Observable, throwError } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
-export interface user {
+import { HttpErrorResponse, HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, catchError, finalize, map, of, shareReplay, tap, throwError } from 'rxjs';
 
+export interface AuthUser {
+  id: string;
+  userName: string;
+  phoneNumber: string;
+  email: string;
 }
+
+export interface LoginResponse {
+  user: AuthUser;
+  message: string;
+}
+
+export interface SignupResponse {
+  user: AuthUser;
+  message: string;
+}
+
+export interface SignupRequest {
+  userName: string;
+  phoneNumber: string;
+  email: string;
+  password: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-
-  private currentUserSubject = new BehaviorSubject<string>('');
+  private currentUserSubject = new BehaviorSubject<AuthUser | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
+  private sessionLoaded = false;
+  private sessionRestoreRequest: Observable<AuthUser | null> | null = null;
+
   constructor(private http: HttpClient) { }
-  setCurrentUser(user: any): void {
-    this.currentUserSubject.next(user);
+
+  setSession(response: LoginResponse): void {
+    this.sessionLoaded = true;
+    this.currentUserSubject.next(response.user);
+  }
+
+  restoreSession(): Observable<AuthUser | null> {
+    if (this.sessionLoaded) return of(this.currentUserSubject.value);
+    if (this.sessionRestoreRequest) return this.sessionRestoreRequest;
+
+    this.sessionRestoreRequest = this.http.get<{ user: AuthUser | null }>('/api/session', {
+      withCredentials: true
+    }).pipe(
+      map((response) => response.user),
+      tap((user) => {
+        this.sessionLoaded = true;
+        this.currentUserSubject.next(user);
+      }),
+      catchError((error: HttpErrorResponse) => {
+        if (error.status !== 401) return throwError(() => error);
+        this.sessionLoaded = true;
+        this.currentUserSubject.next(null);
+        return of(null);
+      }),
+      finalize(() => this.sessionRestoreRequest = null),
+      shareReplay({ bufferSize: 1, refCount: false })
+    );
+    return this.sessionRestoreRequest;
+  }
+
+  isAuthenticated(): boolean {
+    return this.currentUserSubject.value !== null;
   }
 
   clearCurrentUser(): void {
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem('currentUser');
-      window.localStorage.removeItem('isLoggedIn');
-      // window.localStorage.removeItem('loanManagerCurrentUser');
-      // window.localStorage.removeItem('loanManagerUserName');
-    }
-
-    this.currentUserSubject.next('');
+    this.sessionLoaded = true;
+    this.currentUserSubject.next(null);
   }
 
-  createUsers(payload: any): Observable<any> {
-    // https://urban-zebra-77vxpw6j6j4ghrxj4-3000.app.github.dev http://localhost:3000
-    return this.http.post('/api/signup', payload).pipe(map((res) => {
-      return res
-    }),
-      catchError((error) => {
-        return error
+  logout(): Observable<void> {
+    return this.http.post('/api/logout', {}, { withCredentials: true }).pipe(
+      map(() => {
+        this.clearCurrentUser();
       })
-    )
+    );
+  }
 
+  createUsers(payload: SignupRequest): Observable<SignupResponse> {
+    return this.http.post<SignupResponse>('/api/signup', payload);
   }
-  getUsers(): Observable<any> {
-    return this.http.get('/api/users').pipe(map((res) => {
-      return res
-    }),
-      catchError((error) => {
-        return error
-      })
-    )
-  }
-  loginUsers(payload: any): Observable<any> {
-    return this.http.post('/api/login', payload).pipe(map((res) => {
-      return res
-    }),
-      catchError((error) => {
-        return throwError(() => error)
-      })
-    )
+
+  loginUsers(payload: { email: string; password: string }): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>('/api/login', payload, { withCredentials: true });
   }
 }
