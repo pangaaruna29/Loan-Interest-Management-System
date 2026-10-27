@@ -13,10 +13,17 @@ const mongoDB= require('./config/db');
 const authRoutes = require('./routes/authRoutes')
 const clientRoutes = require('./routes/clientRoutes')
 const port = process.env.PORT || 3000
+const allowedOrigins = (process.env.FRONTEND_ORIGIN ||
+  'http://localhost:4200,https://loan-interest-management-system.vercel.app')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 app.use(express.json());
 
 app.use(cors({
-  origin: process.env.FRONTEND_ORIGIN || 'http://localhost:4200',
+  origin: (origin, callback) => {
+    callback(null, !origin || allowedOrigins.includes(origin));
+  },
   credentials: true
 }));
 
