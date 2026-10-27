@@ -1,58 +1,93 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { HttpErrorResponse, HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, catchError, finalize, map, of, shareReplay, tap, throwError } from 'rxjs';
+
+export interface AuthUser {
+  id: string;
+  userName: string;
+  phoneNumber: string;
+  email: string;
+}
+
+export interface LoginResponse {
+  user: AuthUser;
+  message: string;
+}
+
+export interface SignupResponse {
+  user: AuthUser;
+  message: string;
+}
+
+export interface SignupRequest {
+  userName: string;
+  phoneNumber: string;
+  email: string;
+  password: string;
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private currentUserSubject = new BehaviorSubject<string>(this.getStoredUserName());
+  private currentUserSubject = new BehaviorSubject<AuthUser | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
+  private sessionLoaded = false;
+  private sessionRestoreRequest: Observable<AuthUser | null> | null = null;
 
-  setCurrentUser(user: any): void {
-    const userName = user?.username || user?.email || 'User';
+  constructor(private http: HttpClient) { }
 
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('loanManagerCurrentUser', JSON.stringify(user));
-      window.localStorage.setItem('loanManagerUserName', userName);
-    }
+  setSession(response: LoginResponse): void {
+    this.sessionLoaded = true;
+    this.currentUserSubject.next(response.user);
+  }
 
-    this.currentUserSubject.next(userName);
+  restoreSession(): Observable<AuthUser | null> {
+    if (this.sessionLoaded) return of(this.currentUserSubject.value);
+    if (this.sessionRestoreRequest) return this.sessionRestoreRequest;
+
+    this.sessionRestoreRequest = this.http.get<{ user: AuthUser | null }>('/api/session', {
+      withCredentials: true
+    }).pipe(
+      map((response) => response.user),
+      tap((user) => {
+        this.sessionLoaded = true;
+        this.currentUserSubject.next(user);
+      }),
+      catchError((error: HttpErrorResponse) => {
+        if (error.status !== 401) return throwError(() => error);
+        this.sessionLoaded = true;
+        this.currentUserSubject.next(null);
+        return of(null);
+      }),
+      finalize(() => this.sessionRestoreRequest = null),
+      shareReplay({ bufferSize: 1, refCount: false })
+    );
+    return this.sessionRestoreRequest;
+  }
+
+  isAuthenticated(): boolean {
+    return this.currentUserSubject.value !== null;
   }
 
   clearCurrentUser(): void {
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem('currentUser');
-      window.localStorage.removeItem('isLoggedIn');
-      window.localStorage.removeItem('loanManagerCurrentUser');
-      window.localStorage.removeItem('loanManagerUserName');
-    }
-
-    this.currentUserSubject.next('');
+    this.sessionLoaded = true;
+    this.currentUserSubject.next(null);
   }
 
-  getCurrentUserName(): string {
-    return this.getStoredUserName();
+  logout(): Observable<void> {
+    return this.http.post('/api/logout', {}, { withCredentials: true }).pipe(
+      map(() => {
+        this.clearCurrentUser();
+      })
+    );
   }
 
-  private getStoredUserName(): string {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return '';
-    }
+  createUsers(payload: SignupRequest): Observable<SignupResponse> {
+    return this.http.post<SignupResponse>('/api/signup', payload);
+  }
 
-    const currentUser = window.localStorage.getItem('loanManagerCurrentUser');
-    if (currentUser) {
-      try {
-        const parsedUser = JSON.parse(currentUser);
-        const storedName = parsedUser?.username || parsedUser?.email || '';
-        if (storedName) {
-          return storedName;
-        }
-      } catch {
-        // ignore malformed storage value
-      }
-    }
-
-    const fallbackValue = window.localStorage.getItem('loanManagerUserName') || '';
-    return fallbackValue;
+  loginUsers(payload: { email: string; password: string }): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>('/api/login', payload, { withCredentials: true });
   }
 }

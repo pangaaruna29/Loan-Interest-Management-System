@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MaterialModule } from '../../material/material-module';
 import { Router, RouterModule } from '@angular/router';
@@ -13,9 +13,14 @@ import { AuthService } from '../../services/auth.service';
 })
 export class Loginpage {
   loginForm: FormGroup;
-  loginError = '';
+  loginError:string='';
+  user:any;
 
-  constructor(private fb: FormBuilder, private router: Router, private authService: AuthService) {
+  constructor(
+     private fb: FormBuilder,
+     private router: Router,
+     private authService: AuthService,
+    private cdr:ChangeDetectorRef) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
@@ -65,38 +70,19 @@ export class Loginpage {
 
     const email = (this.loginForm.value.email || '').trim().toLowerCase();
     const password = this.loginForm.value.password || '';
-    const savedUsers = this.getStoredUsers();
-    const matchedUser = savedUsers.find((user: any) => user.email?.toLowerCase() === email);
-
-    if (!matchedUser) {
-      this.loginError = 'User not found. Please create an account.';
-      return;
+    const payload = {
+      email: email,
+      password: password
     }
-
-    if (matchedUser.password !== password) {
-      this.loginError = 'Incorrect password. Please try again.';
-      return;
-    }
-
-    this.authService.setCurrentUser(matchedUser);
-    this.router.navigate(['']);
-  }
-
-  getStoredUsers(): any[] {
-    if (typeof window === 'undefined' || !window.localStorage) {
-      return [];
-    }
-
-    const savedUsers = window.localStorage.getItem('loanManagerUsers');
-    if (!savedUsers) {
-      return [];
-    }
-
-    try {
-      const parsedUsers = JSON.parse(savedUsers);
-      return Array.isArray(parsedUsers) ? parsedUsers : [];
-    } catch {
-      return [];
-    }
+    this.authService.loginUsers(payload).subscribe({
+      next: (response) => {
+        this.authService.setSession(response);
+        this.router.navigate(['/clientDetails']);
+      },
+      error: (error) => {
+        this.loginError = error?.error?.message || 'Unable to sign in. Please try again.';
+        this.cdr.markForCheck();
+      }
+    })
   }
 }

@@ -288,6 +288,67 @@ img {
           padding: 24px 18px 18px;
           border: 1px solid rgba(126, 148, 200, 0.08);
 
+          .count-chart-legend {
+            display: flex;
+            gap: 18px;
+            margin: 0 8px 14px;
+            color: #7388aa;
+            font-size: 0.8rem;
+
+            span {
+              display: inline-flex;
+              align-items: center;
+              gap: 7px;
+            }
+
+            i {
+              width: 10px;
+              height: 10px;
+              border-radius: 50%;
+            }
+
+            .active-loan-key {
+              background: #4b6ef5;
+            }
+
+            .due-soon-key {
+              background: #f5a623;
+            }
+          }
+
+          .count-chart-bars {
+            height: 220px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 0 8px 6px;
+          }
+
+          .count-chart-month {
+            display: flex;
+            flex: 1;
+            height: 100%;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 4px;
+          }
+
+          .count-chart-month span {
+            display: block;
+            width: 42%;
+            min-height: 0;
+            border-radius: 8px 8px 0 0;
+          }
+
+          .active-loan-bar {
+            background: linear-gradient(180deg, #8bb8ff 0%, #4b6ef5 100%);
+          }
+
+          .due-soon-bar {
+            background: linear-gradient(180deg, #ffd486 0%, #f5a623 100%);
+          }
+
           .chart-bars {
             height: 220px;
             display: flex;

@@ -29,6 +29,9 @@
         </div>
       </div>
 
+      <p class="form-error" role="alert" *ngIf="formError">{{ formError }}</p>
+      <p *ngIf="isLoadingClient">Loading client details...</p>
+
       <form class="client-form" [formGroup]="clientForm" (ngSubmit)="saveClient()">
         <div class="form-grid">
           <mat-form-field appearance="outline">
@@ -110,7 +113,7 @@
 
         <div class="form-actions">
           <button mat-stroked-button type="button" (click)="cancelClient()">Cancel</button>
-          <button mat-flat-button color="primary" type="submit" [disabled]="clientForm.invalid">{{ isEditMode ? 'Update Client' : 'Save Client' }}</button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="clientForm.invalid || isSaving || isLoadingClient">{{ isSaving ? 'Saving...' : (isEditMode ? 'Update Client' : 'Save Client') }}</button>
         </div>
       </form>
     </div>

@@ -16,14 +16,9 @@
         </div>
 
         <div class="mini-summary">
-          <div>
-            <strong>4.9/5</strong>
-            <span>Client satisfaction</span>
-          </div>
-          <div>
-            <strong>₹3.7L</strong>
-            <span>Collected this quarter</span>
-          </div>
+          <span *ngIf="dashboardLoading">Loading dashboard counts...</span>
+          <span *ngIf="sessionChecked && !isLoggedIn && !dashboardLoading">Public dashboard shows counts only. Sign in to view financial metrics.</span>
+          <span role="alert" *ngIf="dashboardError">{{ dashboardError }}</span>
         </div>
       </div>
 
@@ -51,37 +46,48 @@
         </div>
       </mat-card>
     </div>
+    <p class="dashboard-error" role="alert" *ngIf="dashboardError">{{ dashboardError }}</p>
+    <p class="dashboard-signin-note" *ngIf="sessionChecked && !isLoggedIn">
+      This public dashboard shows organization-wide counts only. Sign in to view financial totals and payment history.
+    </p>
 
     <div class="overview-grid">
       <mat-card class="panel revenue-panel">
         <div class="section-header">
-          <h2>Loan Overview</h2>
+          <h2>{{ isLoggedIn ? 'Recent Payments' : 'Loan Overview' }}</h2>
         </div>
 
-        <div class="revenue-metrics">
-          <div class="metric-box">
-            <span>Total Loans</span>
-            <strong>₹18.5L</strong>
-          </div>
-          <div class="metric-box">
-            <span>Amount Given</span>
-            <strong>₹22.0L</strong>
-          </div>
-          <div class="metric-box">
-            <span>Amount Paid</span>
-            <strong>₹14.2L</strong>
-          </div>
-          <div class="metric-box">
-            <span>Outstanding</span>
-            <strong>₹7.8L</strong>
+        <div class="revenue-metrics" *ngIf="isLoggedIn">
+          <div class="metric-box" *ngFor="let metric of overviewMetrics">
+            <span>{{ metric.title }}</span>
+            <strong>{{ metric.value }}</strong>
           </div>
         </div>
 
-        <div class="chart-wrap" aria-label="Revenue chart">
-          <div class="chart-bars">
-            <span *ngFor="let value of chartValues" [style.height.%]="value"></span>
+        <div class="chart-wrap" aria-label="Monthly payments chart">
+          <p *ngIf="!isLoggedIn && sessionChecked && !hasPublicLoanCounts">No loan counts to display yet.</p>
+          <p *ngIf="isLoggedIn && !dashboardLoading && !hasRecentPayments">No recorded payments in the last eight months.</p>
+          <div class="count-chart-legend" *ngIf="!isLoggedIn && hasPublicLoanCounts">
+            <span><i class="active-loan-key"></i>Active loans</span>
+            <span><i class="due-soon-key"></i>Due soon</span>
           </div>
-          <div class="chart-labels">
+          <div class="count-chart-bars" *ngIf="!isLoggedIn && hasPublicLoanCounts">
+            <div class="count-chart-month" *ngFor="let month of publicLoanCounts">
+              <span class="active-loan-bar" [style.height.%]="month.activeHeight" [attr.title]="month.label + ': ' + month.activeLoans + ' active loans'"></span>
+              <span class="due-soon-bar" [style.height.%]="month.dueSoonHeight" [attr.title]="month.label + ': ' + month.dueSoonLoans + ' due soon'"></span>
+            </div>
+          </div>
+          <div class="chart-labels" *ngIf="!isLoggedIn && hasPublicLoanCounts">
+            <span *ngFor="let month of publicLoanCounts">{{ month.label }}</span>
+          </div>
+          <div class="chart-bars" *ngIf="isLoggedIn">
+            <span
+              *ngFor="let value of chartValues; let index = index"
+              [style.height.%]="value"
+              [attr.title]="chartLabels[index] + ': ' + chartAmount(monthlyPayments[index])"
+            ></span>
+          </div>
+          <div class="chart-labels" *ngIf="isLoggedIn">
             <span *ngFor="let label of chartLabels">{{ label }}</span>
           </div>
         </div>
@@ -146,5 +152,3 @@
     </div>
   </footer>
 </div>
-
-

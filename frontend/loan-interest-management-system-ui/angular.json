@@ -68,6 +68,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+           "options": {
+            "proxyConfig": "src/app/proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "loan-interest-management-system-ui:build:production"

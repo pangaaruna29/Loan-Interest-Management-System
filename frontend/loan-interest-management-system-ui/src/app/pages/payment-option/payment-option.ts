@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MaterialModule } from '../../material/material-module';
 import { LoanInterestService, PaymentHistoryEntry } from '../../services/loan-interest.service';
 import { ClientPayment, ViewClientData } from '../view-client/view-client';
+import { ClientService } from '../../services/client.service';
 
 
 @Component({
@@ -14,17 +15,18 @@ import { ClientPayment, ViewClientData } from '../view-client/view-client';
 })
 export class PaymentOption {
   @Input() client!: ViewClientData;
-  @Input() clientIndex: number | null = null;
   @Output() closePopup = new EventEmitter<void>();
   @Output() paymentSaved = new EventEmitter<ViewClientData>();
 
   today = this.toDateInputValue(new Date());
   paymentForm;
-   storageKey = 'loanManagerClientDetails';
+  isSaving = false;
+  saveError = '';
 
   constructor(
     private formBuilder: FormBuilder,
     private loanInterest: LoanInterestService,
+    private clientService: ClientService,
   ) {
     this.paymentForm = this.formBuilder.group({
       paymentAmount: [null as number | null, [Validators.required, Validators.min(0.01), (control) => this.amountLimitValidator(control.value)]],
@@ -118,10 +120,11 @@ export class PaymentOption {
   }
 
   savePayment(): void {
-    if (this.paymentForm.invalid || !this.client) {
+    if (this.paymentForm.invalid || !this.client || this.isSaving) {
       this.paymentForm.markAllAsTouched();
       return;
     }
+    this.saveError = '';
 
     const amount = this.toNumber(this.paymentForm.controls.paymentAmount.value);
     const date = this.paymentDateText();
@@ -140,11 +143,7 @@ export class PaymentOption {
       notes: String(this.paymentForm.controls.notes.value ?? '').trim() || undefined,
     };
     const updatedPayments = [...this.payments(), payment];
-    const updatedClient: ViewClientData = {
-      ...this.client,
-      payments: updatedPayments,
-      amountPaid: this.legacyAmountPaid() + updatedPayments.reduce((sum, item) => sum + this.toNumber(item.paymentAmount), 0),
-    };
+    const amountPaid = this.legacyAmountPaid() + updatedPayments.reduce((sum, item) => sum + this.toNumber(item.paymentAmount), 0);
     const updatedInterest = this.calculateInterest(this.calculationDate());
     const updatedAllocation = this.loanInterest.calculatePaymentAllocation(
       0,
@@ -153,16 +152,35 @@ export class PaymentOption {
       this.toHistory(updatedPayments),
       this.legacyAmountPaid(),
     );
-    updatedClient.paymentStatus = this.loanInterest.calculatePaymentStatus(
+    const paymentStatus = this.loanInterest.calculatePaymentStatus(
       updatedAllocation.outstanding,
-      updatedClient.dueDate,
+      this.client.dueDate,
       this.calculationDate(),
       updatedAllocation.totalPaid,
     );
 
-    if (!this.persistClient(updatedClient)) return;
-    this.paymentSaved.emit(updatedClient);
-    this.closePopup.emit();
+    const id = this.clientId();
+    if (!id) {
+      this.saveError = 'Unable to find the client to update.';
+      return;
+    }
+
+    this.isSaving = true;
+    this.clientService.updateClient(id, {
+      payments: updatedPayments,
+      amountPaid,
+      paymentStatus,
+    }).subscribe({
+      next: (updatedClient) => {
+        this.isSaving = false;
+        this.paymentSaved.emit(updatedClient);
+        this.closePopup.emit();
+      },
+      error: (error) => {
+        this.saveError = error?.error?.message || 'Unable to save payment. Please try again.';
+        this.isSaving = false;
+      }
+    });
   }
 
   cancel(): void {
@@ -239,22 +257,9 @@ export class PaymentOption {
     return `${year}-${month}-${day}`;
   }
 
-   persistClient(updatedClient: ViewClientData): boolean {
-    if (typeof window === 'undefined') return false;
-    try {
-      const saved: ViewClientData[] = JSON.parse(window.localStorage.getItem(this.storageKey) ?? '[]');
-      if (!Array.isArray(saved)) return false;
-      let index = this.clientIndex;
-      if (index === null || !saved[index] || saved[index].phoneNumber !== this.client.phoneNumber) {
-        index = saved.findIndex((item) => item.phoneNumber === this.client.phoneNumber && item.clientName === this.client.clientName);
-      }
-      if (index < 0) return false;
-      saved[index] = updatedClient;
-      window.localStorage.setItem(this.storageKey, JSON.stringify(saved));
-      return true;
-    } catch {
-      return false;
-    }
+   clientId(): string | undefined {
+    const id = this.client?.id ?? this.client?.['_id'];
+    return typeof id === 'string' ? id : undefined;
   }
 
    createPaymentId(): string {

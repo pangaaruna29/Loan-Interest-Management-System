@@ -19,10 +19,9 @@ export class Header {
   ];
   private rt = inject(Router);
   private authService = inject(AuthService);
-  private currentUser = toSignal(this.authService.currentUser$, {
-    initialValue: this.authService.getCurrentUserName(),
-  });
-  userName = computed(() => this.currentUser()?.trim() ?? '');
+  private currentUser = toSignal(this.authService.currentUser$);
+  
+  userName = computed(() => this.currentUser()?.userName ?? '');
   isLoggedIn = computed(() => !!this.userName());
   userInitial = computed(() => this.userName().charAt(0).toUpperCase() || 'U');
 
