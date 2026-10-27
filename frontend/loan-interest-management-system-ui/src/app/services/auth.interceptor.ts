@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
-import { inject, PLATFORM_ID } from '@angular/core';
+import { inject, isDevMode, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
@@ -10,7 +10,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  const url = request.url.startsWith('/api/')
+  const url = !isDevMode() && request.url.startsWith('/api/')
     ? `${API_BASE_URL}${request.url}`
     : request.url;
   const authenticatedRequest = request.clone({ url, withCredentials: true });

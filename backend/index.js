@@ -32,6 +32,14 @@ app.use(cors({
 app.get('/', (req, res) => {
   res.send('Hello, World!');
 });
+app.use('/api', async (_req, res, next) => {
+  try {
+    await mongoDB();
+    next();
+  } catch (_error) {
+    res.status(503).json({ message: 'Database unavailable' });
+  }
+});
 app.use('/api',authRoutes);
 app.use('/api/clients', clientRoutes);
 
