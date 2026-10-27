@@ -14,6 +14,7 @@ const authRoutes = require('./routes/authRoutes')
 const clientRoutes = require('./routes/clientRoutes')
 const port = process.env.PORT || 3000
 const allowedOrigins = new Set([
+  'https://loan-interest-management-system.vercel.app',
   'https://loan-interest-management-system-8up.vercel.app',
   ...(process.env.FRONTEND_ORIGIN || 'http://localhost:4200')
   .split(',')
