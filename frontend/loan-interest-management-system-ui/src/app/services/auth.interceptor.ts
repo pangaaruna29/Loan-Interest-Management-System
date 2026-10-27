@@ -4,12 +4,16 @@ import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
+import { API_BASE_URL } from './api.config';
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  const authenticatedRequest = request.clone({ withCredentials: true });
+  const url = request.url.startsWith('/api/')
+    ? `${API_BASE_URL}${request.url}`
+    : request.url;
+  const authenticatedRequest = request.clone({ url, withCredentials: true });
 
   return next(authenticatedRequest).pipe(catchError((error: HttpErrorResponse) => {
     if (
