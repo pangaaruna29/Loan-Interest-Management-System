@@ -50,7 +50,7 @@ const loginUser = async (credentials) => {
     const validateEmail = email.trim().toLowerCase();
     const existingUser = await user.findOne({ email: validateEmail }).select('+password');
     if (!existingUser) {
-        const error = new Error('Invalid email or password');
+        const error = new Error('User not found');
         error.status = 401;
         throw error;
     }
