@@ -90,4 +90,7 @@ export class AuthService {
   loginUsers(payload: { email: string; password: string }): Observable<LoginResponse> {
     return this.http.post<LoginResponse>('/api/login', payload, { withCredentials: true });
   }
+  resetPassword(payload: { email: string }): Observable<any> {
+    return this.http.post('/api/forgot-password', payload);
+  }
 }

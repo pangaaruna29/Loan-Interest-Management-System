@@ -1,12 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MaterialModule } from '../../material/material-module';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
-  imports: [CommonModule, ReactiveFormsModule, MaterialModule, RouterModule],
+  imports: [CommonModule, FormsModule,ReactiveFormsModule, MaterialModule, RouterModule],
   selector: 'app-loginpage',
   styleUrl: './loginpage.scss',
   templateUrl: './loginpage.html',
@@ -15,6 +15,9 @@ export class Loginpage {
   loginForm: FormGroup;
   loginError:string='';
   user:any;
+  openPopup:boolean=false;
+  resetMessage = '';
+  requestMail:string='';
 
   constructor(
      private fb: FormBuilder,
@@ -84,5 +87,27 @@ export class Loginpage {
         this.cdr.markForCheck();
       }
     })
+  }
+  openResetPopup(){
+    this.resetMessage = '';
+    this.openPopup = true;
+  }
+
+  closeResetPopup(): void {
+    this.openPopup = false;
+  }
+
+  sendResetEmail(): void {
+    this.resetMessage = '';
+    console.log(this.requestMail,'maill')
+    this.authService.resetPassword({ email: this.requestMail }).subscribe({
+      next: (response) => {
+        this.resetMessage = response.message;
+      },
+      error: (error) => {
+        this.resetMessage = error?.error?.message || 'Unable to request a password reset';
+        this.cdr.markForCheck();
+      }
+    });
   }
 }

@@ -128,6 +128,71 @@
   }
 }
 
+.reset-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(17, 28, 42, 0.48);
+  backdrop-filter: blur(3px);
+}
+
+.reset-popup {
+  position: relative;
+  width: min(100%, 400px);
+  padding: 42px 28px 28px;
+  border: 1px solid rgba(42, 93, 245, 0.12);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(13, 30, 58, 0.24);
+  text-align: center;
+  animation: reset-popup-enter 180ms ease-out;
+
+  .reset-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    color: #53647b;
+  }
+
+  h2 {
+    margin: 0;
+    color: #1d2d4f;
+    font-size: 1.35rem;
+  }
+
+  p {
+    margin: 8px 0 20px;
+    color: #5d708d;
+    line-height: 1.5;
+  }
+
+  .reset-email-field,
+  .reset-send-button {
+    width: 100%;
+  }
+
+  .reset-message {
+    margin: 14px 0 0;
+    color: #5d708d;
+    font-size: 0.9rem;
+  }
+}
+
+@keyframes reset-popup-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (max-width: 480px) {
   .login-shell {
     min-height: calc(100vh - 72px);

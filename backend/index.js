@@ -12,20 +12,13 @@ const app = express();
 const mongoDB= require('./config/db');
 const authRoutes = require('./routes/authRoutes')
 const clientRoutes = require('./routes/clientRoutes')
+const { getAllowedFrontendOrigin } = require('./config/frontendOrigins');
 const port = process.env.PORT || 3000
-const allowedOrigins = new Set([
-  'https://loan-interest-management-system.vercel.app',
-  'https://loan-interest-management-system-8up.vercel.app',
-  ...(process.env.FRONTEND_ORIGIN || 'http://localhost:4200')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean)
-]);
 app.use(express.json());
 
 app.use(cors({
   origin: (origin, callback) => {
-    callback(null, !origin || allowedOrigins.has(origin));
+    callback(null, !origin || Boolean(getAllowedFrontendOrigin(origin)));
   },
   credentials: true
 }));

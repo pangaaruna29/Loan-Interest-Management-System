@@ -20,9 +20,19 @@ const userData = new mongoose.Schema({
     type: String,
     required: true,
     select: false
+  },
+  resetPasswordToken: {
+    type: String,
+    default: null,
+    select: false
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null,
+    select: false
   }
 }, {
   timestamps: true
-})
+});
 
 module.exports = mongoose.model('User', userData);

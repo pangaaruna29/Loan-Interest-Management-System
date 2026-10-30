@@ -27,7 +27,7 @@
 
       <div class="form-extra">
         <mat-checkbox color="primary" formControlName="rememberMe">Remember me</mat-checkbox>
-        <a href="#" class="forgot-password">Forgot password?</a>
+        <span class="forgot-password" (click)="openResetPopup()">Forgot password?</span>
       </div>
 
       <button mat-flat-button color="primary" class="login-button" type="submit" [disabled]="loginForm.invalid">
@@ -41,4 +41,27 @@
       </div>
     </form>
   </mat-card>
+</div>
+
+<div *ngIf="openPopup" class="reset-backdrop" (click)="closeResetPopup()">
+  <div class="reset-popup" role="dialog" aria-modal="true" aria-labelledby="reset-title" (click)="$event.stopPropagation()">
+    <button mat-icon-button class="reset-close" type="button" aria-label="Close" (click)="closeResetPopup()">
+      <mat-icon>close</mat-icon>
+    </button>
+
+    <h2 id="reset-title">Forgot your password?</h2>
+    <p>Enter your email and we’ll help you get back in.</p>
+
+    <mat-form-field appearance="outline" class="reset-email-field">
+      <mat-label>Email address</mat-label>
+      <input matInput type="email" placeholder="name@example.com" #resetEmail required [(ngModel)]="requestMail" />
+    </mat-form-field>
+
+    <button mat-flat-button color="primary" class="reset-send-button" type="button"
+      [disabled]="!resetEmail.validity.valid" (click)="sendResetEmail()">
+      Send to email
+    </button>
+
+    <p *ngIf="resetMessage" class="reset-message" role="status">{{ resetMessage }}</p>
+  </div>
 </div>
